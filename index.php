@@ -1,5 +1,8 @@
 <?php
-    $pageTitle = "A3 League Welcome";
-    $content = "main";
+    ini_set("display_errors", 1);
+    $pageTitle = "Welcome";
     include("includes/head.php");
+
+    include("includes/foot.php");
+
 ?>

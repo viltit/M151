@@ -7,48 +7,54 @@
    */
 
     ini_set("display_errors", 1);
+    if (session_status() != PHP_SESSION_ACTIVE) {
+        session_start();
+    }
 
     $error = $message =  '';
     $username = $password = '';
-
-    ini_set("display_errors", 1);
 
     /* 
     Check username and password if user tried to login
     */
     if($_SERVER['REQUEST_METHOD'] == "POST") {
-        //username. We used htmlspecialchars in register.php, so we use it here too
-        if(isset($_POST['username']) && !empty(trim($_POST['username'])) && strlen(trim($_POST['username'])) <= 20) {
-            $username = htmlspecialchars(trim($_POST['username']));
-        } else {
-            $error .= "Invalid username.<br />";
-        }
-        //password
-        if(isset($_POST['password']) && !empty(trim($_POST['password'])) && strlen(trim($_POST['password'])) <= 20) {
-            $password = htmlspecialchars(trim($_POST['password']));
-        } else {
-            $error .= "Invalid username.<br />";
-        }
-        //no errors? Check if username with password exists
-        if (empty($error)) {
-            require("includes/dbConnect.php");
-            $query = "SELECT username FROM Player WHERE username = ? AND password = UNHEX(SHA1(?))";
-            $stm = $mysqli->prepare($query);
-            $stm->bind_param("ss", $username, $password);
-            $stm->execute();
+        require_once("validations/user.php");
 
-            $result = $stm->get_result();
+        //reset messages
+        $error = $message =  ''; 
+        $username = $password = '';
 
-            //we have the result -> close database connection
-            $stm->close();
-            $mysqli->close();
-
-            //TODO: Set session variable for succesful login
-            if ($result->num_rows != 1) {
-                $error .= "Invalid username and / or password.";
+        //first, check if the user wanted to log-out or log in
+        if (isset($_POST['logout'])) {
+            $message = "You are now logged out.";
+            unset($_SESSION['user']);
+        }  
+        else if (isset($_POST['username'])) {
+            //username. We used htmlspecialchars in register.php, so we use it here too
+            if(isset($_POST['username']) && !empty(trim($_POST['username'])) && strlen(trim($_POST['username'])) <= 20) {
+                $username = htmlspecialchars(trim($_POST['username']));
+            } else {
+                $error .= "Please enter your username.<br />";
             }
-            else {
-                $message = "You are now logged in.";
+            //password
+            if(isset($_POST['password']) && !empty(trim($_POST['password'])) && strlen(trim($_POST['password'])) <= 20) {
+                $password = htmlspecialchars(trim($_POST['password']));
+            } else {
+                $error .= "Please enter your password.<br />";
+            }
+            
+            //no errors? Check if username with password exists
+            if (empty($error)) {
+                require_once("includes/database.php");
+                $db = new Database();
+                $handler = $db->connect();   
+                $status = User::fromLogin($username, $password, $handler);
+                if ($status) { 
+                    $message = "Hello ".$_SESSION['user']."! You are now logged in.";
+                }
+                else {
+                    $error .= "Invalid username and / or password";
+                }
             }
         }
     }
@@ -91,22 +97,35 @@
                     </ul>
                     </li>
                     <-->
-                    <li><a href="">My Squad</a>
+                    <li><a href="squadPage.php">My Squad</a>
                     </li>
                 </ul>
+                <?php
+                    if (!isset($_SESSION['user'])) {
+                ?>
                 <ul class="nav navbar-nav navbar-right">
                     <li><a href="register.php"><b>Not a user yet? Register</b></a>
                     </li>
                 </ul>
-                <form class="navbar-form navbar-right" method="POST">
-                    <div class="form-group">
-                        <input type="text" class="form-control" name="username" placeholder="Username">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" class="form-control" name="password" placeholder="Password">
-                    </div>
-                    <button type="submit" class="btn btn-default">Sign In</button>
-                </form>
+                    <form class="navbar-form navbar-right" method="POST">
+                        <div class="form-group">
+                            <input type="text" class="form-control" name="username" placeholder="Username">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-control" name="password" placeholder="Password">
+                        </div>
+                        <button type="submit" class="btn btn-default">Sign In</button>
+                    </form>
+                <?php
+                    }
+                    else {
+                ?>
+                    <form class="navbar-form navbar-right" method="POST">
+                        <button type="submit" name="logout" class="btn btn-default">Logout</button>
+                    </form>
+                <?php
+                    }
+                ?>
                 </div>
                 </div>
             </div>
@@ -120,5 +139,5 @@
                 if (!empty($error)) {
                     echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
                 }
-                include "content/".$content.".cont.php";
+
             ?>
