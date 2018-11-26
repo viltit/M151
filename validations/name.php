@@ -11,7 +11,7 @@
                 $this->name = htmlspecialchars(trim($name));
             } 
             else {
-                throw InvalidArgumentException("Your username is not valid.");
+                throw new InvalidArgumentException("Your username is not valid.");
             }
         }
 

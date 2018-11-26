@@ -11,6 +11,87 @@
         session_start();
     }
 
+
+    class Head {
+
+        private $pageTitle = "";
+        private $menuItemsLeft = array();
+        private $menuItemsRight = array();
+        private $basePath = "";
+
+
+        public function __construct(String $pageTitle, string $basePath) {
+            $this->pageTitle = $pageTitle;
+            //$this->$menuItems = $menuItems;
+            $this->basePath = $basePath;
+        }
+
+        public function addMenuItem(bool $isLeft, MenuItem $menuItem) {
+            if ($isLeft) {
+                $this->menuItemsLeft[] = $menuItem;
+            }
+            else {
+                $this->menuItemsRight[] = $menuItem;
+            }
+        }
+
+        public function display() {
+            //html header and start of menu bar:
+            echo("
+            <!DOCTYPE html>
+            <html lang='en'>
+                <head>
+                    <meta charset='utf-8'>
+                    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1'>
+                    <title>".$this->pageTitle."></title>
+                    <!-- CSS from bootsrap -->
+                    <link rel='stylesheet' href='".$this->basePath."bootstrap/css/bootstrap.min.css'>
+                </head>
+                <body>
+                <nav class='navbar navbar-inverse navbar-fixed-top'>
+                    <div class='container'>
+                        <div class='navbar-header'>
+                            <button class='navbar-toggle' type='button' data-toggle='collapse' data-target='#navbar'>
+                            <span class='icon-bar'></span>
+                            <span class='icon-bar'></span>
+                            <span class='icon-bar'></span>
+                            </button>
+                            <a class='navbar-brand' href='#'>Arma 3 League</a>
+                        </div>
+                ");
+            //menu left:
+            echo("<div id='navbar' class='collapse navbar-collapse'>
+                        <ul class='nav navbar-nav navbar-left'>");
+            foreach($this->menuItemsLeft as $item) {
+                echo("<li>".$item.display()."</li>");
+            }
+            echo("</ul>");
+            //menu right:
+            echo("<ul class='nav navbar-nav navbar-right'>
+                <ul>");
+            foreach($this->menuItemsRight as $item) {
+                echo("<li>".$item.display()."</li>");
+            }
+            echo("</ul></div></div></nav>");
+        }
+    }
+
+    //TODO: Menu Forms
+    class MenuItem {
+        private $href;
+        private $text;
+
+        public function __construct(String $href, String $text) {
+            $this->href = $href;
+            $this->text = $text;
+        }
+
+        public function display() {
+            return "<a href='".$this->href."'>".$this->text."</a>";
+        }
+    }
+
     $error = $message =  '';
     $username = $password = '';
 

@@ -1,10 +1,15 @@
 <?php
     ini_set("display_errors", 1);
-    ini_set("display_errors", 1);
     $pageTitle = "Admin Panel";
-    include("includes/head.php");
+    $basePath = "../";
+    include ($basePath."includes/head.php");
 
-    include("includes/foot.php");
+    $head = new Head($pageTitle, $basePath);
+    $head->display();
+
+    //include("includes/head.php");
+
+    //include("includes/foot.php");
 ?>
 
 <h1 class="form-heading">login Form</h1>
