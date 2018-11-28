@@ -1,6 +1,7 @@
 <?php
     ini_set("display_errors", 1);
     $pageTitle = "My Squad";
+
     include("includes/head.php");
 
     require_once("includes/database.php");
@@ -9,6 +10,9 @@
     if (session_status() != PHP_SESSION_ACTIVE) {
         session_start();
     }
+
+    session_regenerate_id();
+
     if (!isset($_SESSION['user'])) {
         echo ("<div class=\"alert alert-danger\" role=\"alert\">You must be logged in to view this page.</div>");
     }

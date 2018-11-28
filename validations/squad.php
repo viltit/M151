@@ -3,6 +3,7 @@
     if (session_status() != PHP_SESSION_ACTIVE) {
             session_start();
     }
+    ini_set("display_errors", 1);
     
     /*  custom exceptions for proper error handling 
         no custom behaviour needed, we just want to catch the proper exception and react accordingly
@@ -37,21 +38,64 @@
         private $leader;
         private $players;
         private $side;
-        private $error;
-        private $message;
+        private $credits;
+        private $error = "";
+        private $message = "";
 
         /*
-        constructor takes a database connection and a squadname
+        constructor can take an $_POST-array directly and does all the necessary validations
+        if a validation fails, the constructor will throw
+        Errors in non-mandatory field do not throw, but are written into $this->error
+
+        TODO: Differentiate error-messages ("Your username is not valid" for squad mates)
+        TODO: Clan Image
+        TODO: FILTER_VALIDATE_URL seems not very bright
+        TODO: Completly forgot the status attribute ...
         */
-        public function __construct(String $name, String $img, String $url, int $leader, int $side) {
-            $this->name = $name;
-            $this->url = $url;
-            $this->img = $img;
-            $this->leader = $leader;
-            $this->players = array();
-            $this->side = $side;
-            $this->error = "";
-            $this->message = "";
+        public function __construct($array) {
+           
+            if (!isset($array['name']) || !isset($array['leadername']) || !isset($array['players'])) {
+                throw new InvalidArgumentException("Fill out all required form elements");
+            }
+            try {
+                //class Name will validate these fields:
+                $this->name = new Name($array['name']);
+                $this->leader = new Name($array['leadername']);
+
+                //TODO: Error prone. What if a player has a ',' in his name ?? We need to check player names !
+                $playersRaw = explode(",", $array['players']);
+                
+                //make sure a player was not registered twice or more. We give no error if this happend.
+                //TODO: DOES NOT WORK PROPERLY
+                for($i = 0; $i < count($playersRaw); $i++) {
+                    trim($playersRaw[$i]);
+                }
+                $players = array_unique($playersRaw);
+
+                if (count($players) < 2) {
+                    throw new InvalidArgumentException("You need a leader and at least two players to form a squad. You only gave us ".count($players)." Players.");
+                }
+                foreach($players as $player) {
+                    $this->players[] = new Name($player);
+                }
+
+                //check for voluntary fields:
+                if (isset($array['url'])) {
+                    if (filter_var(htmlspecialchars(trim($array['url']), FILTER_VALIDATE_URL))) {
+                        $this->url = htmlspecialchars(trim($array['url']));
+                    }
+                    else $this->error .= "Your clan url seems invalid.";
+                }
+                //TODO: Clan image
+                
+                //The following variables can not be set by a normal user, we skip validations here:
+                $this->side = isset($array['side']) ? $array['side'] : null;
+                $this->credits = isset($array['credits']) ? $array['credits'] : "0";
+            }
+            //TODO: Remove
+            catch (InvalidArgumentException $e) {
+                throw $e;
+            }
         }
 
         /* 
@@ -93,21 +137,38 @@
             $leader = $result['leaderID'];
             $side = is_null($result['sideID']) ? -1 : $result['sideID'];
 
-            //finally, construct a squad object:
-            $squad = new Squad($name, $img, $url, $leader, $side);
-
             //the caller of this method is also interested in the players belonging to this squad, so fetch them:
             //TODO: This seems a duplication if the code at the start if this function
-            $query = "SELECT * FROM Player WHERE squadID = :id";
+            $query = "SELECT username, id FROM Player WHERE squadID = :id";
             $stm = $connection->prepare($query);
             $stm->bindParam(":id", $squadID);
             $stm->execute();
             $result = $stm->fetch(PDO::FETCH_ASSOC);
 
-            return array(
-                'squad' => $squad,
-                'players' => $result
-            );
+            //constructor wants comma-separated string with players (so we put the array in a string here
+            //and the constructor makes an array from this string again ....)
+            $playernames = "";
+            $leadername = "";
+            foreach($result as $r) {
+                if ($r['id'] == $leader) {
+                    $leadername = $r['username'];
+                }
+                else {
+                    $playernames .= $r['username'].",";
+                }
+            }
+            $playernames = substr($playernames, 0, -1);
+
+            //finally, construct a squad object:
+            $squad = new Squad(array(
+                ['name'] => $name, 
+                ['leadername'] => $leadername,
+                ['players'] => $playernames,
+                ['side'] => $side,
+                ['img'] => $img,
+                ['url'] => $url
+            ));
+            return Squad($squad);
         }
 
         /* 
@@ -116,39 +177,80 @@
         - new squads will always have 0 credits
         */
         public function save(PDO $connection) {
-            //check if a squad with the given name already exists:
+            //ERROR CHECK: Is one of the players already in a squad ?
+            $squadIDs = fetchSquadID($connection, $this->players);
+            foreach($squadIDs as $id) {
+                if (!is_null($id)) {
+                    throw new InvalidArgumentException("One of your player already is in a squad");
+                }
+            }   
+            //TODO: Include squad-leader in above test
+
+            //ERROR-CHECK: Does a squad with this name already exists?
             $query = "SELECT name FROM Squad WHERE name = :name";
             $stm = $connection->prepare($query);
-            //TODO: Error check;
             $stm->bindParam(':name', $this->name);
             $stm->execute();
-            //If the name, give an error:
+            //If the name exists, give an error:
             if ($stm->rowCount() != 0) {
-                $this->error = "A squad with this name already exists.";
+                throw new InvalidArgumentException("A squad with this name already exists.");
             }
-            //if not, write to database:
-            else {
-                $query = "INSERT INTO Squad (name, image, url, sideID, leaderID)
-                        VALUES (:name, :image, :url, :side, :leader)";
-                $stm = $connection->prepare($query);
-                //we bind on execution:
-                $success = $stm->execute(array(
-                    ':name' => $this->name,
-                    ':firstName' => $this->image,
-                    ':email' => $this->url,
-                    ':username' => $this->side,
-                    ':password' => $this->leader
-                ));
-                if (!$success) {
-                   $this->error = "We seem to have a problem with our database. Please try again later or contact an admin."; 
-                }
-                else {
-                    
-                }
-            }            
+
+            //ERROR CHECKS DONE => WRITE SQUAD TO DATABASE
+            $leaderID = $this->fetchAttribute($connection, "id");
+            echo("<h1>".$leaderID."</h1>");
+
+            $query = "INSERT INTO Squad (name, image, url, sideID, leaderID, credits)
+                    VALUES (:name, :image, :url, :side, :leader, :credits)";
+            $stm = $connection->prepare($query);
+            echo("<h1>".$query."</h1>");
+
+            $success = $stm->execute(array(
+                ':name' => $this->name,
+                ':url' => $this->url,
+                ':image' => $this->image,
+                ':leader' => $leaderID,
+                ':side' => $this->side,
+                ':credits' => $this->credits 
+            ));
+
+            if (!$success) {
+                echo("<h1>".$success."</h1>");
+                throw new InvalidArgumentException("11 We seem to have a problem with our database. 
+                    Please try again later or contact an admin."); 
+            }
+
+            //SQUAD CREATED -> UPDATE PLAYER TABLE
+            $squadID = fetchAttribute($connection, "id");
+            $allPlayers = $players;
+            $allPlayers.append($this->$leader);
+
+            //squadID got just fetched from the database, we can omit prepared statement for it
+            $in = str_repeat("?,", count($allPlayers)-1) . "?";
+            $stmt = $connection->prepare("UPDATE Player SET squadID = ".$squadID." WHERE username IN ($in)");
+            $success = $stm->execute($allPlayers);
+
+            if (!$success) {
+                throw new InvalidArgumentException("We seem to have a problem with our database. 
+                    Please try again later or contact an admin."); 
+            }
         }
 
+        //private function: fetch a given attribute from the database
+        private function fetchAttribute(PDO $connection, String $attrib) {
+            $query = "SELECT ".$attrib." FROM Player WHERE username = :name";
+            echo("<h1>".$query."</h1>");
+            $stm = $connection->prepare($query);
+            echo("<h1>".$this->leader."</h1>");
+            $stm->bindParam(":name", $this->leader);
+            $success = $stm->execute();
+            if (!$success) {
+                throw new InvalidArgumentException("22 We seem to have a problem with our database. 
+                    Please try again later or contact an admin."); 
+            }
+            $result = $stm->fetch(PDO::FETCH_ASSOC);
+            return $result[$attrib];
+        }
     }
-
 
 ?>

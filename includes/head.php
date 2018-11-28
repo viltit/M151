@@ -109,6 +109,7 @@
         if (isset($_POST['logout'])) {
             $message = "You are now logged out.";
             unset($_SESSION['user']);
+            session_destroy();
         }  
         else if (isset($_POST['username'])) {
             //username. We used htmlspecialchars in register.php, so we use it here too
