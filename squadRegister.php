@@ -24,7 +24,9 @@
                     $squad = new Squad($_POST);
                     $db = new Database();
                     $connection = $db->connect();
-                    $squad->save($connection);  
+                    $squad->save($connection); 
+                    $message = "Your squad was registered! If you have not done so yet, please talk to an admin now: 
+                    You still need to choose a side in our online conflict! Only admins can assign you to a side.";
                 }
                 catch (InvalidArgumentException $e) {
                     $errors .= $e->getMessage();
@@ -85,7 +87,7 @@
 
                 <div class="form-group">
                     <label for="playername">Players *</label>
-                    <input type="text" name="players" minlength="3" maxlength="20" required class="form-control"    
+                    <input type="text" name="players" minlength="3" maxlength="100" required class="form-control"    
                         placeholder="List all your Players with their username, separate them with a comma - ie Player1, Player2">
                 </div>
 

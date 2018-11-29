@@ -6,7 +6,7 @@
     class Name {
         private $name;
 
-        function __construct(string $name, int $minlength = 3, int $maxlength = 20) {
+        public function __construct(string $name, int $minlength = 3, int $maxlength = 20) {
             if(!empty(trim($name)) && strlen(trim($name)) <= $maxlength && strlen(trim($name)) >= $minlength) {
                 $this->name = htmlspecialchars(trim($name));
             } 
@@ -15,7 +15,10 @@
             }
         }
 
-        function __toString() {
+        public function string() {
+            return $this->name;
+        }
+        public function __toString() {
             return $this->name;
         }
     }

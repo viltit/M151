@@ -4,7 +4,9 @@
             session_start();
     }
     ini_set("display_errors", 1);
-    
+    require_once("includes/database.php");
+    require_once("validations/name.php");
+
     /*  custom exceptions for proper error handling 
         no custom behaviour needed, we just want to catch the proper exception and react accordingly
     */
@@ -50,7 +52,9 @@
         TODO: Differentiate error-messages ("Your username is not valid" for squad mates)
         TODO: Clan Image
         TODO: FILTER_VALIDATE_URL seems not very bright
-        TODO: Completly forgot the status attribute ...
+        TODO: Completly forgot the status attribute ... somehow works without.
+        TODO: When a database operation fails after we already changed somethin, we should revert all changes!
+        TODO: Custom exception classes for better error handling
         */
         public function __construct($array) {
            
@@ -98,6 +102,32 @@
             }
         }
 
+        //getters:
+        public function getName() {
+            return $this->name;
+        }
+        public function getLeader() {
+            return $this->leader;
+        }
+        public function getPlayers() {
+            return $this->players;
+        }
+        public function getPlayersPrettyString() {
+            return implode (", ", $this->players);
+        }
+        public function getCredits() {
+            return $this->credits;
+        }
+        public function getSide() {
+            return $this->side;
+        }
+        public function getURL() {
+            return $this->url;
+        }
+        public function getImage() {
+            return $this->image;
+        }
+
         /* 
         static function for loading a squad for a given player name
         returns a new squad Instance on success
@@ -130,6 +160,7 @@
             if ($stm->rowCount() == 0) {
                 throw new InvalidArgumentException("A squad with the given id does not exist! (Bad, bad programming...)");
             }
+            //TODO: Leave nulls be null 
             $result = $stm->fetch(PDO::FETCH_ASSOC);
             $name = $result['name'];
             $url = is_null($result['url']) ? "" : $result['url'];
@@ -143,32 +174,32 @@
             $stm = $connection->prepare($query);
             $stm->bindParam(":id", $squadID);
             $stm->execute();
-            $result = $stm->fetch(PDO::FETCH_ASSOC);
+            //$result = $stm->fetch(PDO::FETCH_ASSOC);
 
             //constructor wants comma-separated string with players (so we put the array in a string here
             //and the constructor makes an array from this string again ....)
             $playernames = "";
             $leadername = "";
-            foreach($result as $r) {
-                if ($r['id'] == $leader) {
-                    $leadername = $r['username'];
+            while($result = $stm->fetch(PDO::FETCH_ASSOC)) {
+                if ($result['id'] == $leader) {
+                    $leadername = $result['username'];
                 }
                 else {
-                    $playernames .= $r['username'].",";
+                    $playernames .= $result['username'].",";
                 }
             }
             $playernames = substr($playernames, 0, -1);
 
             //finally, construct a squad object:
             $squad = new Squad(array(
-                ['name'] => $name, 
-                ['leadername'] => $leadername,
-                ['players'] => $playernames,
-                ['side'] => $side,
-                ['img'] => $img,
-                ['url'] => $url
+                'name' => $name, 
+                'leadername' => $leadername,
+                'players' => $playernames,
+                'side' => $side,
+                'img' => $img,
+                'url' => $url
             ));
-            return Squad($squad);
+            return $squad;
         }
 
         /* 
@@ -178,7 +209,7 @@
         */
         public function save(PDO $connection) {
             //ERROR CHECK: Is one of the players already in a squad ?
-            $squadIDs = fetchSquadID($connection, $this->players);
+            $squadIDs = $this->isInForeignSquad($connection, $this->players);
             foreach($squadIDs as $id) {
                 if (!is_null($id)) {
                     throw new InvalidArgumentException("One of your player already is in a squad");
@@ -197,7 +228,7 @@
             }
 
             //ERROR CHECKS DONE => WRITE SQUAD TO DATABASE
-            $leaderID = $this->fetchAttribute($connection, "id");
+            $leaderID = $this->getLeaderID($connection);
             echo("<h1>".$leaderID."</h1>");
 
             $query = "INSERT INTO Squad (name, image, url, sideID, leaderID, credits)
@@ -215,42 +246,79 @@
             ));
 
             if (!$success) {
-                echo("<h1>".$success."</h1>");
-                throw new InvalidArgumentException("11 We seem to have a problem with our database. 
+                throw new InvalidArgumentException("We seem to have a problem with our database (Could not save squad). 
                     Please try again later or contact an admin."); 
             }
 
             //SQUAD CREATED -> UPDATE PLAYER TABLE
-            $squadID = fetchAttribute($connection, "id");
-            $allPlayers = $players;
-            $allPlayers.append($this->$leader);
+            $squadID = $connection->lastInsertId();
+            echo("<h1> SquadID: ".$squadID);
+            //the squadID was just fetched from the database, no need to prepare
+            $query = "UPDATE Player SET squadID = ".$squadID." WHERE username = :username";
+            $stm = $connection->prepare($query);
+            foreach($this->players as $index => $player) {
+                $name = $player->string();
+                $stm->bindParam(':username', $name);
+                $success = $stm->execute();
+                if (!$success) {
+                    throw new InvalidArgumentException("We seem to have a problem with our database (Could not save squadID for Player ".$name."). 
+                    Please try again later or contact an admin."); 
+                }
+                //the leader is not in the player array:
+                if ($index == 0) {
+                    $stm->bindParam(":username", $this->leader);
+                    $success = $stm->execute();
+                    if (!$success) {
+                        throw new InvalidArgumentException("We seem to have a problem with our database (Could not save squadID for Player). 
+                        Please try again later or contact an admin."); 
+                    }
+                }
+            }
+        }
 
-            //squadID got just fetched from the database, we can omit prepared statement for it
-            $in = str_repeat("?,", count($allPlayers)-1) . "?";
-            $stmt = $connection->prepare("UPDATE Player SET squadID = ".$squadID." WHERE username IN ($in)");
-            $success = $stm->execute($allPlayers);
-
+        //private function: get leader id
+        private function getLeaderID(PDO $connection) {
+            $query = "SELECT id FROM Player WHERE username = :name";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":name", $this->leader);
+            $success = $stm->execute();
             if (!$success) {
                 throw new InvalidArgumentException("We seem to have a problem with our database. 
                     Please try again later or contact an admin."); 
             }
+            $result = $stm->fetch(PDO::FETCH_ASSOC);
+            return $result['id'];
         }
 
-        //private function: fetch a given attribute from the database
-        private function fetchAttribute(PDO $connection, String $attrib) {
-            $query = "SELECT ".$attrib." FROM Player WHERE username = :name";
-            echo("<h1>".$query."</h1>");
+        //private function: get squad id => TODO: Make one function with parameter 
+        private function getSquadID(PDO $connection) {
+            $query = "SELECT id FROM Squad WHERE name = :name";
             $stm = $connection->prepare($query);
-            echo("<h1>".$this->leader."</h1>");
-            $stm->bindParam(":name", $this->leader);
+            $stm->bindParam(":name", $this->name->string());
             $success = $stm->execute();
             if (!$success) {
-                throw new InvalidArgumentException("22 We seem to have a problem with our database. 
+                throw new InvalidArgumentException("We seem to have a problem with our database. 
                     Please try again later or contact an admin."); 
             }
             $result = $stm->fetch(PDO::FETCH_ASSOC);
-            return $result[$attrib];
+            return $result[id];
         }
+
+        //check if a player already is in a squad
+        private function isInForeignSquad(PDO $connection, $names) {
+            $query = "SELECT squadID FROM Player WHERE name = :name";
+            $stm = $connection->prepare($query);
+            $result = array();
+            foreach($names as $name) {
+                $stm->bindParam(":name", $name);
+                $stm->execute();
+                $temp = $stm->fetch(PDO::FETCH_ASSOC);
+                $result[] = $temp['squadID'];
+            }
+            return $result;
+        }
+
+
     }
 
 ?>

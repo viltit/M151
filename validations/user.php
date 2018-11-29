@@ -21,7 +21,7 @@
         public function __construct($array) {
             if (!isset($array['name']) || !isset($array['firstName']) || !isset($array['username']) 
                 || !isset($array['email']) || !isset($array['password'])) {
-                throw InvalidArgumentException("Fill out all required form elements");
+                throw new InvalidArgumentException("Fill out all required form elements");
             }
             try {
                 $this->name = new Name($array['name']);

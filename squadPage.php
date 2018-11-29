@@ -1,6 +1,7 @@
 <?php
     ini_set("display_errors", 1);
     $pageTitle = "My Squad";
+    $message = $error = "";
 
     include("includes/head.php");
 
@@ -22,7 +23,38 @@
         $handler = $db->connect();
         try {
             $squad = Squad::load($handler, $_SESSION['user']);
-            //TODO: Display squad info
+            //Display squad info.
+            //TODO: Squad image
+            echo("
+                <h1>Squad Overview</h1><br>
+                <table class='table table-dark'>
+                    <thead class='thead-dark'>
+                    <tr>
+                        <th scope='col'>".$squad->getName()."</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                    <th scope='row' style='width: 25%'>Leader</th>
+                    <td>".$squad->getLeader()."</td>
+                    </tr>
+                    <tr>
+                    <th scope='row' style='width: 25%'>Players</th>
+                    <td>".$squad->getPlayersPrettyString()."</td>
+                    </tr>
+                    <th scope='row' style='width: 25%'>URL</th>
+                    <td><a href='https://".$squad->getUrl()."'>".$squad->getUrl()."</a></td>
+                    </tr>
+                    <th scope='row' style='width: 25%'>Side</th>
+                    <td>".$squad->getSide()."</td>
+                    </tr>
+                    <th scope='row' style='width: 25%'>Credits</th>
+                    <td>".$squad->getCredits()."</td>
+                    </tr>
+                    <tbody>
+                </table>
+            ");
+
             //TODO: Menu item for inventory inspection
         }
         catch (InvalidArgumentException $e) {
