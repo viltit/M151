@@ -93,8 +93,9 @@
                 //TODO: Clan image
                 
                 //The following variables can not be set by a normal user, we skip validations here:
-                $this->side = isset($array['side']) ? $array['side'] : null;
+                $this->side = isset($array['side']) ? $array['side'] : "pending";
                 $this->credits = isset($array['credits']) ? $array['credits'] : "0";
+                $this->status = isset($array['status']) ? $array['status'] : "pending";
             }
             //TODO: Remove
             catch (InvalidArgumentException $e) {
@@ -126,6 +127,9 @@
         }
         public function getImage() {
             return $this->image;
+        }
+        public function getStatus() {
+            return $this->status;
         }
 
         /* 
@@ -163,10 +167,11 @@
             //TODO: Leave nulls be null 
             $result = $stm->fetch(PDO::FETCH_ASSOC);
             $name = $result['name'];
-            $url = is_null($result['url']) ? "" : $result['url'];
-            $img = is_null($result['image']) ? "" : $result['image'];
+            $url = $result['url'];
+            $img = $result['image'];
             $leader = $result['leaderID'];
-            $side = is_null($result['sideID']) ? -1 : $result['sideID'];
+            $side = $result['sideID'];
+            $status = $result['status'];
 
             //the caller of this method is also interested in the players belonging to this squad, so fetch them:
             //TODO: This seems a duplication if the code at the start if this function
@@ -197,7 +202,8 @@
                 'players' => $playernames,
                 'side' => $side,
                 'img' => $img,
-                'url' => $url
+                'url' => $url,
+                'status' => $status
             ));
             return $squad;
         }

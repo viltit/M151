@@ -107,9 +107,7 @@
 
         //first, check if the user wanted to log-out or log in
         if (isset($_POST['logout'])) {
-            $message = "You are now logged out.";
-            unset($_SESSION['user']);
-            session_destroy();
+            require_once("includes/logout.php");
         }  
         else if (isset($_POST['username'])) {
             //username. We used htmlspecialchars in register.php, so we use it here too

@@ -21,6 +21,8 @@
         //TODO: Check if user is in a squad
         $handler =  $db = new Database();
         $handler = $db->connect();
+
+        //all possible errors here (player has no squad, database problem, etc.) are handled with throws
         try {
             $squad = Squad::load($handler, $_SESSION['user']);
             //Display squad info.
@@ -51,9 +53,24 @@
                     <th scope='row' style='width: 25%'>Credits</th>
                     <td>".$squad->getCredits()."</td>
                     </tr>
+                    </tr>
+                    <th scope='row' style='width: 25%'>Status</th>
+                    <td>".$squad->getStatus()."</td>
+                    </tr>
                     <tbody>
                 </table>
             ");
+            
+            //Alert user if status is pending:
+            if ($squad->getStatus() == "pending") {
+                echo("
+                    <div class=\"alert alert-danger\" role=\"alert\">
+                        Your squad is not validatet yet! You can not take any squad actions. Please contact an
+                        admin. Together with you and other players, the admin will decide on which side you play
+                        and then validate your squad.
+                    </div>
+                ");
+            }
 
             //TODO: Menu item for inventory inspection
         }
