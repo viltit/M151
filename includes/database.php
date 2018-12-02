@@ -35,22 +35,7 @@
         }
     }
 
-    /* 
-    a set of helper function that we might use often
-    self explanatory
-    */
-    function fetchSquadID(PDO $connection, $names) {
-        $query = "SELECT squadID FROM Player WHERE name = :name";
-        $stm = $connection->prepare($query);
-        $result = array();
-        foreach($names as $name) {
-            $stm->bindParam(":name", $name);
-            $stm->execute();
-            $temp = $stm->fetch(PDO::FETCH_ASSOC);
-            $result[] = $temp['squadID'];
-        }
-        return $result;
-    }
+ 
 
 
 

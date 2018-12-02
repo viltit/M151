@@ -11,21 +11,31 @@
     $message = $errors = $user = $name = $firstName = $email = $username = "";
 
     if ($_SERVER['REQUEST_METHOD'] == "POST") {
-        $user = new User($_POST);
-        if (empty($user->error())) {
-            $db = new Database();
-            $handler = $db->connect();
-            $user->save($handler);
-            //again, check for errors
+        try { 
+            $user = new User($_POST);
             if (empty($user->error())) {
-                $message = "Your registration was succesful.";
+                $db = new Database();
+                $handler = $db->connect();
+                try { 
+                    $user->save($handler);
+                }
+                catch (InvalidArgumentException $e) {
+                    $errors .= $e->getMessage();
+                }
+                //again, check for errors
+                if (empty($user->error())) {
+                    $message = "Your registration was succesful.";
+                }
+                else {
+                    $errors .= $user->error();
+                }
             }
             else {
                 $errors .= $user->error();
             }
         }
-        else {
-            $errors .= $user->error();
+        catch (InvalidArgumentException $e) {
+            $errors .= $e->getMessage();
         }
     }
 

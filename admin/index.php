@@ -1,45 +1,41 @@
 <?php
     ini_set("display_errors", 1);
+
+    session_start();
+    session_regenerate_id();
+
     $pageTitle = "Admin Panel";
     $basePath = "../";
-    include ($basePath."includes/head.php");
+    include ($basePath."includes/headObject.php");
 
     $head = new Head($pageTitle, $basePath);
+    $head->addMenuItem(true, "Pending squads", "squadValidate.php");
+
     $head->display();
 
     //include("includes/head.php");
-
-    //include("includes/foot.php");
 ?>
 
-<h1 class="form-heading">login Form</h1>
+<h1 class="form-heading">Admin-Login</h1>
 <div class="login-form">
 <div class="main-div">
     <div class="panel">
-   <h2>Admin Login</h2>
-   <p>Please enter your email and password</p>
+    <p>Identify yourself, please!<br>
+    <i>This is a restricted area, and we WILL log your ip when you try to log in.</i>
+    </p>
    </div>
     <form id="Login">
         <div class="form-group">
-            <input type="email" class="form-control" id="inputEmail" placeholder="Email Address">
-
+            <input type="text" class="form-control" id="name" placeholder="Your playername">
         </div>
-
         <div class="form-group">
-
-            <input type="password" class="form-control" id="inputPassword" placeholder="Password">
-
+            <input type="password" class="form-control" id="password" placeholder="Your Password">
         </div>
-        <div class="forgot">
-        <a href="reset.html">Forgot password?</a>
-</div>
         <button type="submit" class="btn btn-primary">Login</button>
-
     </form>
     </div>
-<p class="botto-text"> Designed by Sunil Rajput</p>
 </div></div></div>
 
-
-</body>
-</html>
+<?php
+    include($basePath."includes/foot.php");
+?>
