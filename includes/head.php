@@ -92,6 +92,14 @@
                     <!-- Squad site -->
                     <a class="nav-link" href="squadPage.php">My Squad<span class="sr-only">(current)</span></a>
                 </li>
+                <li class="nav-item active">
+                    <!-- Map -- (dead link => TODO) 
+                    a NICE map will be a lot of work. The idea would be to re-use it for the squad managmenet
+                    so that squads can select their in-game spawn points directly from the map. This, however, 
+                    calls for more than just a big .png -> leaflet -> lot of work -> do later)
+                    -->
+                    <a class="nav-link" href="">Tactical Map<span class="sr-only">(current)</span></a>
+                </li>
             </ul>
             <!-- User not linked to a session -> display login form and register button -->
             <?php

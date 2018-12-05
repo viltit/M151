@@ -4,8 +4,7 @@
             session_start();
     }
     ini_set("display_errors", 1);
-    require_once("includes/database.php");
-    require_once("validations/name.php");
+    require_once($basePath."validations/name.php");
 
     /*  custom exceptions for proper error handling 
         no custom behaviour needed, we just want to catch the proper exception and react accordingly
@@ -136,6 +135,8 @@
         static function for loading a squad for a given player name
         returns a new squad Instance on success
         throws an error if the given player is in no suqad
+
+        TODO: This could be signficantly more elegant with a JOIN-Query
         */
         public static function load(PDO $connection, String $username) {
             //first, check if the given player has a squad id
@@ -206,6 +207,45 @@
                 'status' => $status
             ));
             return $squad;
+        }
+
+        /*
+        Load ALL Squads in the database
+        Returns an array with the Squads
+        */
+        public static function loadAll(PDO $connection) {
+            $query = "SELECT * FROM Squad ";
+            $result = $connection->query($query);
+            $squads = array();
+            //we will need the player names:
+            $query = "SELECT username, id FROM Player WHERE squadID = :squadID";
+            $stm = $connection->prepare($query);
+            
+            while ($squad = $result->fetch(PDO::FETCH_ASSOC)) {
+                $stm->bindParam(":squadID", $squad['id']);
+                $stm->execute();
+                $playernames = "";
+                $leadername = "";
+                while($player = $stm->fetch(PDO::FETCH_ASSOC)) {
+                    if ($player['id'] == $squad['leaderID']) {
+                        $leadername = $player['username'];
+                    }
+                    else {
+                        $playernames .= $player['username'].",";
+                    }
+                }
+                $playernames = substr($playernames, 0, -1);
+                $squads[] = new Squad(array(
+                    'name' => $squad['name'], 
+                    'leadername' => $leadername,
+                    'players' => $playernames,
+                    'side' => $squad['sideID'],
+                    'img' => $squad['image'],
+                    'url' => $squad['url'],
+                    'status' => $squad['status']
+                ));
+            }
+            return $squads;
         }
 
         /* 

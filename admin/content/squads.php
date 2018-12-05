@@ -68,7 +68,7 @@
         $menu = "";
         if ($row['status'] == 'pending') {
             $style = " class='table-danger'";
-            $menu = "<br><a href='squadActivate.php?name=".$row['name']."'>activate</a>";
+            $menu = "<br><a href='squadOverview.php?name=".$row['name']."&action=activate'>activate</a>";
         }
         else if ($row['status'] == 'inactive') {
             $style = " class='table-warning'";
