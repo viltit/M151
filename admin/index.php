@@ -11,13 +11,6 @@
     include ($basePath."includes/headObject.php");
     require_once($basePath."includes/database.php");
 
-    $head = new Head($pageTitle, $basePath);
-    if (isset($_SESSION['admin'])) {
-        $head->addMenuItem(true, "Pending squads", "squadValidate.php");
-    }
-
-    $head->display();
-
     //check admin login
     if($_SERVER['REQUEST_METHOD'] == "POST") {
         try {
@@ -66,6 +59,14 @@
         }
     }
 
+    //display menu
+    $head = new Head($pageTitle, $basePath);
+    if (isset($_SESSION['admin'])) {
+        $head->addMenuItem(true, "Squad overview", "squadOverview.php");
+    }
+    $head->display();
+
+    //display errors or messages
     if (!empty($message)) {
         echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
     }
@@ -73,8 +74,7 @@
         echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
     }
 
-
-    //TODO: Put content outside of these files
+    //if user is not logged in, display login form:
     if (!(isset($_SESSION['admin']))) {
         include("content/loginForm.html");
     }
