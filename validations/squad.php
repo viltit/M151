@@ -322,6 +322,30 @@
             }
         }
 
+        /*
+        Update a squad: Set its side and set status to activated
+        - parameter name: The name of the squad
+        - side: Name of the side this squad plays for
+        */
+        public static function activate(PDO $connection, String $name, String $side) {
+            $query = "SELECT id FROM Side WHERE name = :name";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":name", $side);
+            $stm->execute();
+            if ($stm->rowCount() != 1) {
+                throw new InvalidArgumentException("<Squad::activate> Did not find a side named ".$side);
+            }
+            $sideID = $stm->fetch(PDO::FETCH_ASSOC)['id'];
+            $query = "UPDATE Squad SET status = 'active', sideID = :id WHERE name = :name";
+            echo("<h1>".$query."</h1>");
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":id", $sideID);
+            $stm->bindParam(":name", $name);
+            if (!$stm->execute()) {
+                throw new InvalidArgumentException("We seems to have a problem with our database. Try again later.");
+            }
+        }
+
         //private function: get leader id
         private function getLeaderID(PDO $connection) {
             $query = "SELECT id FROM Player WHERE username = :name";
