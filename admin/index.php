@@ -62,7 +62,9 @@
     //display menu
     $head = new Head($pageTitle, $basePath);
     if (isset($_SESSION['admin'])) {
-        $head->addMenuItem(true, "Squad overview", "squadOverview.php");
+        $head->addMenuItem(true, "Squad managment", "squadOverview.php");
+        $head->addMenuItem(true, "Inventory managment", "inventoryOverwiev.php"); 
+        $head->addMenuItem(false, "Logout", "logout.php");
     }
     $head->display();
 

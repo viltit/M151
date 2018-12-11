@@ -57,7 +57,7 @@
             //menu right:
             echo("<ul class='navbar-nav mr-sm-2'>");
             foreach($this->menuItemsRight as $item) {
-                echo("<li>".$item.display()."</li>");
+                echo("<li>".$item->display()."</li>");
             }
             echo("</ul></div></div></nav>");
             echo("<div class='container' style='padding-top: 40px;'>");
