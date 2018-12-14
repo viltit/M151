@@ -63,7 +63,8 @@
     $head = new Head($pageTitle, $basePath);
     if (isset($_SESSION['admin'])) {
         $head->addMenuItem(true, "Squad managment", "squadOverview.php");
-        $head->addMenuItem(true, "Inventory managment", "inventoryOverwiev.php"); 
+        $head->addMenuItem(true, "Inventory managment", "addInventory.php"); 
+        $head->addMenuItem(true, "Inventory overwiev", "index.php?content=viewInventory");
         $head->addMenuItem(false, "Logout", "logout.php");
     }
     $head->display();
@@ -80,6 +81,14 @@
     if (!(isset($_SESSION['admin']))) {
         include("content/loginForm.html");
     }
+    //user is logged in -> check for get-parameters
+    else if (isset($_GET['content'])) {
+        //TODO IMPORTANT: Make a list of allowed content and check !!!
+        $db = new Database();
+        $connection = $db->connect();
+        include($_GET['content'].".php");
+    }
+
 
     include($basePath."includes/foot.php");
 ?>

@@ -38,11 +38,9 @@
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         try {
-            print_r($_POST);
-            print_r($_FILES);
-            $image = new ImageUploader("test", "");
-            $item = new ItemType($_POST, "");
-            //$item->save();
+            //TODO: Upload img in ItemType !
+            $item = new ItemType($_POST, "image", $basePath);
+            $item->save($handler);
             $message .= "The new item is now saved in the database.";
         }
         catch (Exception $e) {
@@ -79,7 +77,7 @@
     <!-- image -->
     <div class="form-group">
         <label for="image">Image *</label>
-        <input type="hidden" name="MAX_FILE_SIZE" value="1024">
+        <input type="hidden" name="MAX_FILE_SIZE" value="1000000">
         <input type="file" name="image" minlength="3" maxlength="20" required class="form-control-file">
         <!-- TODO: Preview of already uploaded image -->
     </div>
