@@ -1,67 +1,66 @@
 <?php
-
-    //there is a lot of preparation needed here: includes, session, database connection, ...
     ini_set("display_errors", 1);
     session_start();
-
-    $pageTitle = "Admin Panel";
-    $basePath = "../";
-    
-    require_once($basePath."includes/headObject.php");
-    require_once($basePath."validations/side.php");
-    require_once($basePath."validations/squad.php");
-    require_once($basePath."includes/database.php");
-
-    $db = new Database();
-    $handler = $db->connect();
-
-    $error = $message = "";
-
-    //only let admins in:
     if (!isset($_SESSION['admin'])) {
         header("location:index.php");
     }
 
-    //display menu:
-    $head = new Head($pageTitle, $basePath);
-    $head->addMenuItem(true, "Squad overview", "squadOverview.php");
-    $head->display();
-
-    if (!empty($error)) {
-        echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
-        die();
-    }
-
     //check if we have GET-parameters and if so, display the proper menu
-    if (isset($_GET['action'])) {
-        if ($_GET['action'] == 'Activate') {
-            if (isset($_GET['name']) && isset($_GET['side'])) {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        //print_r($_POST);
+        if ($_POST['updateSquad'] == 'activate') {
+            if (isset($_POST['name']) && isset($_POST['side'])) {
                 try {
-                    echo("<h1>Activate</h1>");
-                    Squad::activate($handler, $_GET['name'], $_GET['side']);
-                    $message .= "Squad ".$_GET['name']." is now active on side ".$_GET['side'];
+                    Squad::activate($connection, $_POST['name'], $_POST['side']);
+                    $message .= "Squad ".$_POST['name']." is now active on side ".$_POST['side'];
                 }
                 catch (InvalidArgumentException $e) {
-                    echo("<h1>Error ".$e->getMessage()."</h1>");
                     $error .= $e->getMessage();
                 }
             }
         }
-        else if ($_GET['action'] == 'delete') {
+        else if ($_POST['updateSquad'] == 'deactivate') {
             //TODO: Should we ask the admin if he really want to take this action?
+            if (isset($_POST['name'])) {
+                try {
+                    Squad::changeStatus($connection, $_POST['name'], false);
+                    $message .= "Squad ".$_POST['name']." is now deactivated!";
+                }
+                catch (InvalidArgumentException $e) {
+                    $error .= $e->getMessage();
+                }
+            }
+        }
+        else if ($_POST['updateSquad'] == 'reactivate') {
+            //todo: almost the same code as above
+            if (isset($_POST['name'])) {
+                try {
+                    Squad::changeStatus($connection, $_POST['name'], true);
+                    $message .= "Squad ".$_POST['name']." is now reactivated!";
+                }
+                catch (InvalidArgumentException $e) {
+                    $error .= $e->getMessage();
+                }
+            }
         }
     }
-    //no GET-Params -> just dispay all squads 
-    else {
-        //a lot can go wrong while loading all squad.
-        try {
-            $squads = Squad::loadAll($handler);
-            displaySquads($squads, $handler);
 
-        }
-        catch (Exception $e) {
-            $error .= $e->getMessage();
-        }
+    //display errors or messages
+    if (!empty($message)) {
+        echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
+    }
+    if (!empty($error)) {
+        echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
+    }
+
+    //dispay all squads 
+    try {
+        $squads = Squad::loadAll($connection);
+        displaySquads($squads, $connection);
+
+    }
+    catch (Exception $e) {
+        $error .= $e->getMessage();
     }
 
     include($basePath."includes/foot.php");
@@ -111,12 +110,21 @@
             $menu = "";
             if ($squad->getStatus() == 'pending') {
                 $style = " class='table-danger'";
-                $menu = "<br><form class='form-group' name='activate' method='GET' id='activate".$squad->getName()."'>
+                $menu = "<form class='form-group' name='activate' method='POST' id='activate".$squad->getName()."'>
                         <input type='hidden' name='name' value='".$squad->getName()."'>
-                        <input type='submit' name='action' value='Activate'></form>";
+                        <input type='submit' class='btn btn-danger' name='updateSquad' value='activate'></form>";
+            }
+            else if ($squad->getStatus() == "active") {
+                $style = " class='table-success'";
+                $menu = "<form class='form-group' name='activate' method='POST' id='activate".$squad->getName()."'>
+                        <input type='hidden' name='name' value='".$squad->getName()."'>
+                        <input type='submit' class='btn btn-success' name='updateSquad' value='deactivate'></form>";
             }
             else if ($squad->getStatus() == 'inactive') {
                 $style = " class='table-warning'";
+                $menu = "<form class='form-group' name='activate' method='POST' id='activate".$squad->getName()."'>
+                <input type='hidden' name='name' value='".$squad->getName()."'>
+                <input type='submit' class='btn btn-warning' name='updateSquad' value='reactivate'></form>";
             }
             echo("<td".$style.">".$squad->getStatus().$menu);
             echo("<tr>");

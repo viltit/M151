@@ -20,6 +20,14 @@
         }
     }
 
+    //display errors or messages
+    if (!empty($message)) {
+        echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
+    }
+    if (!empty($error)) {
+        echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
+    }
+
     //TODO: Search function
 
     try {

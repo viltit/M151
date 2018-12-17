@@ -17,12 +17,13 @@
 
     $pageTitle = "Admin Panel";
     $basePath = "../";
-    
+
     require_once($basePath."includes/headObject.php");
     require_once($basePath."includes/database.php");
     require_once($basePath."validations/itemClass.php");
     require_once($basePath."validations/side.php");
     require_once($basePath."validations/itemType.php");
+    require_once($basePath."validations/squad.php");
 
     //check if we have post-data, and if so, verify admins login data
     if($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -40,7 +41,7 @@
     //display header menu
     $head = new Head($pageTitle, $basePath);
     if (isset($_SESSION['admin'])) {
-        $head->addMenuItem(true, "Squad managment", "squadOverview.php");
+        $head->addMenuItem(true, "Squad managment", "index.php?content=squadOverview");
         $head->addMenuItem(true, "Inventory managment", "index.php?content=addInventory"); 
         $head->addMenuItem(true, "Inventory overwiev", "index.php?content=viewInventory");
         $head->addMenuItem(false, "Logout", "logout.php");
@@ -67,6 +68,9 @@
         }
         else if (isset($_POST['addItem'])) {
             include("addInventory.php");
+        }
+        else if (isset($_POST['updateSquad'])) {
+            include("squadOverview.php");
         }
     }
     //3. check for get parameters and include content accordingly:
