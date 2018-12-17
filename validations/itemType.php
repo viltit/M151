@@ -5,6 +5,7 @@
     require_once($basePath."validations/image.php");
     require_once($basePath."validations/name.php");
     require_once($basePath."validations/side.php");
+    require_once($basePath."validations/itemClass.php");
 
     /*
     This class represents an Item that can be bought, selled or taken into combat by the squads.
@@ -54,35 +55,55 @@
             $this->class = $array['class'];
         }
 
-        public function save(PDO $connection) {
-            //TODO IMPORTANT: Check if item already exists !
-
-            //fetch sideID from the database
-            $query = "SELECT id FROM Side WHERE NAME = :name";
-            $stm = $connection->prepare($query);
+        //update an existing entry. Needs a valid script name
+        public function update(PDO $connection, String $scriptName) {
+            
+            //this code gets repeated in function save() ....
             if ($this->side != "all") {
-                $stm->bindParam(":name", $this->side);
-                $stm->execute();
-                if ($stm->rowCount() != 1) {
-                    throw new InvalidArgumentException("<ItemType::save> Could not find side id for ".$this->side);
-                }
-                $result = $stm->fetch(PDO::FETCH_ASSOC);
-                $sideID = $result['id'];
+                $sideID = Side::getIDFromName($connection, $this->side);
             }
             else {
                 $sideID = null;
             }
+            $classID = ItemClass::getIDFromName($connection, $this->class);
 
-            //fetch class id:
-            $query = "SELECT id FROM ItemClass WHERE NAME = :name";
+            $query = "UPDATE ItemType SET name = :name,
+                            scriptName = :scriptName,
+                            image = :image,
+                            classID = :classID,
+                            sideID = :sideID,
+                            price = :price
+                        WHERE scriptName = :oldScriptName";
+            
             $stm = $connection->prepare($query);
-            $stm->bindParam(":name", $this->class);
-            $stm->execute();
-            if ($stm->rowCount() != 1) {
-                throw new InvalidArgumentException("<ItemType::save> Could not find class id for ".$this->class);
+            $stm->execute(array(
+                ":name" => $this->name,
+                ":image" => $this->name,
+                ":price" => $this->price,
+                ":scriptName" => $this->ingameName,
+                ":classID" => $classID,
+                ":sideID" => $sideID,
+                ":oldScriptName" => $scriptName
+            ));
+
+            if (!$stm->execute()) {
+                throw new InvalidArgumentException("Updating item named ".$this->name." in the database failed!");
             }
-            $result = $stm->fetch(PDO::FETCH_ASSOC);
-            $classID = $result['id'];
+        }
+
+        public function save(PDO $connection) {
+            //TODO IMPORTANT: Check if item already exists !
+            
+            //fetch sideID and classID from the database
+            $query = "SELECT id FROM Side WHERE NAME = :name";
+            $stm = $connection->prepare($query);
+            if ($this->side != "all") {
+                $sideID = Side::getIDFromName($connection, $this->side);
+            }
+            else {
+                $sideID = null;
+            }
+            $classID = ItemClass::getIDFromName($connection, $this->class);
 
             //finally, we are ready to save the Item:
             $query = "INSERT INTO ItemType (name, image, price, scriptName, classID, sideID)
@@ -101,11 +122,12 @@
             }
         }
 
+
         /*
         Load all ItemTypes from the database.
         - parameter forSide: optional, if user only wants to load inventory for one side
         */
-        public function loadAll(PDO $connection, String $orderBy = null, String $forSide = null) {
+        public static function loadAll(PDO $connection, String $orderBy = null, String $forSide = null) {
             echo("<h1>".$orderBy."</h1>");
             $query = "SELECT ItemType.name, image, price, scriptName, ItemClass.name AS Class, Side.name AS side 
                       FROM ItemType 
@@ -129,6 +151,9 @@
                 }
                 else if ($orderBy == "byClass") {
                     $query .= " ORDER BY Class";
+                }
+                else if ($orderBy == "byScript") {
+                    $query .= " ORDER BY scriptName";
                 }
             }
             print($query);

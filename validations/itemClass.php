@@ -33,6 +33,20 @@ class ItemClass {
 
         return $classes;
     }
+
+    public static function getIDFromName(PDO $connection, String $name) {
+
+        $query = "SELECT id FROM ItemClass WHERE name = :name";
+        $stm = $connection->prepare($query);
+        $stm->bindParam(":name", $name);
+        $stm->execute();
+        if ($stm->rowCount() != 1) {
+            throw new InvalidArgumentException("<ItemClass::getIDFromName> Could not find side id for name ".$name);
+        }
+        $result = $stm->fetch(PDO::FETCH_ASSOC);
+        return $result['id'];
+    }
+
 }
 
 ?>

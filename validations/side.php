@@ -67,18 +67,21 @@ class Side {
         return $sides;
     }
 
-    public static function getNameFromID(PDO $connection, int $id) {
+    
+    public static function getIDFromName(PDO $connection, String $name) {
         //fetch sideID from the database
-        $query = "SELECT name FROM Side WHERE id = :name";
+        $query = "SELECT id FROM Side WHERE name = :name";
         $stm = $connection->prepare($query);
-        $stm->bindParam(":name", $id);
+        $stm->bindParam(":name", $name);
         $stm->execute();
         if ($stm->rowCount() != 1) {
-            throw new InvalidArgumentException("<ItemType::save> Could not find side name for id ".$id);
+            throw new InvalidArgumentException("<ItemType::save> Could not find side id for name ".$name);
         }
         $result = $stm->fetch(PDO::FETCH_ASSOC);
-        return $result['name'];
-    }
+        return $result['id'];
+    } 
+
+
 
     //getters
     public function getName()       { return $this->name; }
