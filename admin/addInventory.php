@@ -1,37 +1,9 @@
 <?php
-
-//TODO: This is VERY repeating code (the same as in index.php and squadOverview.php)
-//=> Always display head with menus in index.php and include content via an $content variable
-//one idea is to call this sites with a get param: index.php?content=inventoryOverwiev.php
-
-
-    ini_set("display_errors", 1);
-    session_start();
-
-    $pageTitle = "Admin Panel";
-    $basePath = "../";
     
-    require_once($basePath."includes/headObject.php");
-    require_once($basePath."validations/side.php");
-    require_once($basePath."validations/squad.php");
-    require_once($basePath."includes/database.php");
-    require_once($basePath."validations/itemType.php");
-    require_once($basePath."validations/itemClass.php");
-
-    $db = new Database();
-    $handler = $db->connect();
-
-    //only let admins in:
+    ini_set("display_errors", 1);
     if (!isset($_SESSION['admin'])) {
         header("location:index.php");
     }
-
-    //display menu:
-    $head = new Head($pageTitle, $basePath);
-    $head->addMenuItem(true, "Squad managment", "squadOverview.php");
-    $head->addMenuItem(true, "Inventory managment", "inventoryOverwiev.php"); 
-    $head->addMenuItem(false, "Logout", "logout.php");
-    $head->display();
 
     $name = $ingameName = $price = "";
     $error = $message = "";
@@ -40,7 +12,7 @@
         try {
             //TODO: Upload img in ItemType !
             $item = new ItemType($_POST, "image", $basePath);
-            $item->save($handler);
+            $item->save($connection);
             $message .= "The new item is now saved in the database.";
         }
         catch (Exception $e) {
@@ -58,7 +30,9 @@
 
 <h1>Add new Item Types</h1>
 <b>Please check your input with <a href="https://community.bistudio.com/wiki/Arma_3_CfgWeapons_Weapons">official 
-    sources</a> to avoid annoying erros in the game. This site should also serve as an image source.</b><br><br><br>
+    sources</a> to avoid annoying erros in the game. This site should also serve as an image source.</b><br>
+<i>I know this is boring copy-paste-work, automating the creation of Inventory is still a ToDo...</i>
+<br><br><br>
 <form action="" method="POST" enctype="multipart/form-data">
     <!-- Name -->
     <div class="form-group">
@@ -93,7 +67,7 @@
         <label for="itemClass">Item class *</label>
         <select class='form-control' name="class">
         <?php
-            $classes = ItemClass::loadAll($handler);
+            $classes = ItemClass::loadAll($connection);
             print_r($classes);
             foreach($classes as $class) {
                 echo("<option value='".$class->getName()."'>".$class->getName()."</option>");
@@ -107,12 +81,14 @@
         <select class='form-control' name="side">
         <option value="all">All</option>
         <?php
-            $sides = Side::loadAll($handler);
+            $sides = Side::loadAll($connection);
             foreach($sides as $side) {
                 echo("<option value='".$side->getName()."'>".$side->getName()."</option>");
             }
         ?>
         </select>
+        <!-- hidden input so we can identify this post-request in admin/index.php -->
+        <input type="hidden" name="addItem", value="addItem">
     </div>
 
     <!-- Submit or reset -->

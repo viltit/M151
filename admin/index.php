@@ -1,20 +1,31 @@
 <?php
+
+    /* 
+    admins main page 
+    -   regenerate id. There will never be hundreds of admin, so we do not 
+        care about the traffic for regenerate here
+    */
     ini_set("display_errors", 1);
 
     session_start();
-    session_regenerate_id();
+    session_regenerate_id(); 
+    
 
+    //setup variables. AllowedContent: What sites the user can access via GET-Request
     $error = $message = $name = $password = "";
+    $allowedContent = [ "viewInventory", "squadOverview", "addInventory" ];
 
     $pageTitle = "Admin Panel";
     $basePath = "../";
-    include ($basePath."includes/headObject.php");
+    
+    require_once($basePath."includes/headObject.php");
     require_once($basePath."includes/database.php");
+    require_once($basePath."validations/itemClass.php");
+    require_once($basePath."validations/side.php");
+    require_once($basePath."validations/itemType.php");
 
-    //check if we have post-data
+    //check if we have post-data, and if so, verify admins login data
     if($_SERVER['REQUEST_METHOD'] == "POST") {
-        //because we include content by "GET", we can get different kind of post-requests here
-        // => check for admin login first
         if (isset($_POST['login'])) {
             $result = verifyLogin($_POST, $basePath);
             $error .= $result['error'];
@@ -26,11 +37,11 @@
     $db = new Database();
     $connection = $db->connect();
 
-    //display menu
+    //display header menu
     $head = new Head($pageTitle, $basePath);
     if (isset($_SESSION['admin'])) {
         $head->addMenuItem(true, "Squad managment", "squadOverview.php");
-        $head->addMenuItem(true, "Inventory managment", "addInventory.php"); 
+        $head->addMenuItem(true, "Inventory managment", "index.php?content=addInventory"); 
         $head->addMenuItem(true, "Inventory overwiev", "index.php?content=viewInventory");
         $head->addMenuItem(false, "Logout", "logout.php");
     }
@@ -44,21 +55,28 @@
         echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
     }
 
-    //if user is not logged in, display login form:
+    //CONTENT-STEERING:
+    //1. if user is not logged in, display login form:
     if (!(isset($_SESSION['admin']))) {
         include("content/loginForm.html");
     }
-    //check for post parameters only a logged in admin could have submitted:
+    //2. else, check for post parameters:
     else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (isset($_POST['updateItem'])) {
             include("viewInventory.php");
         }
+        else if (isset($_POST['addItem'])) {
+            include("addInventory.php");
+        }
     }
-    //user is logged in -> check for get-parameters
+    //3. check for get parameters and include content accordingly:
     else if (isset($_GET['content'])) {
-        //TODO IMPORTANT: Make a list of allowed content and check !!!
-        include($_GET['content'].".php");
+        if (in_array($_GET['content'], $allowedContent)) {
+            include($_GET['content'].".php");
+        }
     }
+
+    //display footer content:
     include($basePath."includes/foot.php");
 ?>
 
