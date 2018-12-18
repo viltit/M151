@@ -14,6 +14,7 @@
         private $email      = "";
         private $password   = "";
         private $error      = "";
+        private $id         = -1;  //used only for function load()
 
         /*
         constructor takes in the $_POST array directly, which may be a bad idea
@@ -47,16 +48,19 @@
             catch (InvalidArgumentException $e) {
                 $this->error .= "Your email is invalid.";
             }
-            try {
-                $this->password = new Password($array['password'], $array['password2']);
-            }
-            catch (InvalidArgumentException $e) {
-                $this->error .= "Your password is invalid.";
+            //only check password when delivered
+            if (isset($array['password']) && isset($array['password2'])) {
+                try {
+                    $this->password = new Password($array['password'], $array['password2']);
+                }
+                catch (InvalidArgumentException $e) {
+                    $this->error .= "Your password is invalid.";
+                }
             }
         }
 
         /* 
-        Construct a new user instance from the login data, ie username and password
+        Verify a user from the login data, ie username and password
         */
         public static function fromLogin(string $username, string $password, PDO $connection) {
             $query = "SELECT username, password FROM Player WHERE username = :username";
@@ -78,6 +82,25 @@
                     return false;
                 }
             }
+        }
+
+        /* 
+        Create a user instance from username and password
+        User names have to be unique, so this should work
+        */
+        public static function load(PDO $connection, String $username) {
+            $query = "SELECT id, name, firstName, email, username, password FROM Player
+                WHERE username = :name";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":name",$username);
+            $stm->execute();
+            if ($stm->rowCount() != 1) {
+                throw new InvalidArgumentException("Did not find a user named ".$username);
+            }
+            $result = $stm->fetch(PDO::FETCH_ASSOC);
+            $user = new User($result);
+            $user->id = $result['id'];
+            return $user;
         }
 
         /* 
@@ -116,6 +139,49 @@
             }
         }
 
+        /* 
+        update an existing user in the database
+        This function CAN NOT update the users password. Use updatePassword() for this task.
+        - parameter connection: the database connection
+        - parameter array: holds all fields which should be updated
+        - WARNING: User needs his id set for this function
+        */
+        public function update(PDO $connection, $array) {
+            //update values given by $array
+            foreach($array as $key => $value) {
+                if ($key == 'name') {
+                    $this->name = new Name($value);
+                }
+                else if ($key == 'firstName') {
+                    $this->firstName = new Name($value);
+                }
+                else if ($key == 'username') {
+                    $this->username = new Name($value);
+                    echo("<h1>New username: ".$this->username()."</h1>");
+                }
+                else if ($key == 'email') {
+                    $this->email = new Email($value);
+                }
+            }
+            //TODO: Can we REALLY identify the user by password ?
+            $query = "UPDATE Player SET name = :name,
+                        firstName = :firstName,
+                        username = :username,
+                        email = :email
+                        WHERE id = :id";
+            $stm = $connection->prepare($query);
+            $result = $stm->execute(array(
+                ':firstName' => $this->firstName,
+                ':name' => $this->name,
+                'username' => $this->username,
+                'email' => $this->email,
+                'id' => $this->id
+            ));
+            if (!$result) {
+                throw new InvalidArgumentException("Database failed to update user information.");
+            } 
+        }
+
         //getters:
         public function name() {
             return $this->name;
@@ -129,6 +195,8 @@
         public function username() {
             return $this->username;
         }
+
+        //TODO: Remove, this is a bad idea from the beginning of the project
         public function error() {
             return $this->error;
         }

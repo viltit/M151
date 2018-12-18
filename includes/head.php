@@ -32,7 +32,7 @@
         if (isset($_POST['logout'])) {
             require_once("includes/logout.php");
         }  
-        else if (isset($_POST['username'])) {
+        else if (isset($_POST['login'])) {
             //username. We used htmlspecialchars in register.php, so we use it here too
             if(isset($_POST['username']) && !empty(trim($_POST['username'])) && strlen(trim($_POST['username'])) <= 20) {
                 $username = htmlspecialchars(trim($_POST['username']));
@@ -108,13 +108,13 @@
             <form class="form-inline my-2 my-lg-0" method="POST">
                 <input type="text" class="form-control mr-sm-2" name="username" placeholder="Username">
                 <input type="password" class="form-control mr-sm-2" name="password" placeholder="Password">
-                <button type="submit" class="btn btn-default">Sign In</button>
+                <button type="submit" name="login" class="btn btn-default">Sign In</button>
             </form>
             <ul class="navbar-nav mr-sm-2">
                 <li class="nav-item active"><a class="nav-link" href="register.php"><b>Not a user yet? Register</b></a>
                 </li>
             </ul>
-            <!-- user is logged in -> display logout button -->
+            <!-- user is logged in -> display logout button and user profile menu link -->
             <?php
                 }
                 else {
@@ -122,6 +122,10 @@
             <form class="navbar-form navbar-right" method="POST">
                 <button type="submit" name="logout" class="btn btn-default">Logout</button>
             </form>
+            <ul class="navbar-nav mr-sm-2">
+                <li class="nav-item active"><a class="nav-link" href="profile.php"><img src="images/profile.png" class="img-fluid"></a>
+                </li>
+            </ul>
             <?php
                 }
             ?>
