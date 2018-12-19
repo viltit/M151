@@ -1,12 +1,13 @@
 <?php
 
+    session_start();
+
     $pageTitle = "Register yourself";
 
     ini_set("display_errors", 1);
     include("includes/head.php");
     include_once("validations/user.php");
     include_once("includes/database.php");
-
 
     $message = $errors = $user = $name = $firstName = $email = $username = "";
 
@@ -25,6 +26,9 @@
                 //again, check for errors
                 if (empty($user->error())) {
                     $message = "Your registration was succesful.";
+                    //log the user in:
+                    $_SESSION['user'] = $user->name()->string();
+                    header("location:index.php");
                 }
                 else {
                     $errors .= $user->error();

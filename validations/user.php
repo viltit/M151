@@ -147,7 +147,8 @@
         - WARNING: User needs his id set for this function
         */
         public function update(PDO $connection, $array) {
-            //update values given by $array
+            $needUsernameCheck = false;
+            //update values given by $array+
             foreach($array as $key => $value) {
                 if ($key == 'name') {
                     $this->name = new Name($value);
@@ -155,15 +156,22 @@
                 else if ($key == 'firstName') {
                     $this->firstName = new Name($value);
                 }
-                else if ($key == 'username') {
+                else if ($key == 'username' && $value != $this->username) {
                     $this->username = new Name($value);
-                    echo("<h1>New username: ".$this->username()."</h1>");
+                    $needUsernameCheck = true;
                 }
-                else if ($key == 'email') {
+                else if ($key == 'email' && $value != $this->email) {
                     $this->email = new Email($value);
+                    $needUsernameCheck = true;
                 }
             }
-            //TODO: Can we REALLY identify the user by password ?
+
+            //make sure username and email are unique
+            if($needUsernameCheck && $this->doesExists($connection)) {
+                throw new InvalidArgumentException("Username or email already exists.");
+            }
+
+            //TODO: Only perform update when user actually changed something
             $query = "UPDATE Player SET name = :name,
                         firstName = :firstName,
                         username = :username,
@@ -173,13 +181,36 @@
             $result = $stm->execute(array(
                 ':firstName' => $this->firstName,
                 ':name' => $this->name,
-                'username' => $this->username,
-                'email' => $this->email,
-                'id' => $this->id
+                ':username' => $this->username,
+                ':email' => $this->email,
+                ':id' => $this->id
             ));
             if (!$result) {
                 throw new InvalidArgumentException("Database failed to update user information.");
-            } 
+            }
+        }
+
+        public function updatePassword(PDO $connection, Password $pw) {
+            $query = "UPDATE Player SET password = :password WHERE id = :id";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":id", $this->id);
+            $stm->bindParam(":password", $pw);
+            if (!$stm->execute()) {
+                throw new InvalidArgumentException("Database failed to update users password.");
+            }
+        }
+
+        private function doesExists(PDO $connection) {
+            $query = "SELECT username FROM Player WHERE username = :username";
+            $stm = $connection->prepare($query);
+            //TODO: Error check;
+            $stm->bindParam(':username', $this->username);
+            $stm->execute();
+            //If the username or email aready exists, give an error:
+            if ($stm->rowCount() == 0) {
+                return false;
+            }
+            return true;
         }
 
         //getters:

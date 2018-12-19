@@ -81,8 +81,6 @@ class Side {
         return $result['id'];
     } 
 
-
-
     //getters
     public function getName()       { return $this->name; }
     public function getCredits()    { return $this->credit; }

@@ -5,6 +5,7 @@
     }
     ini_set("display_errors", 1);
     require_once($basePath."validations/name.php");
+    require_once($basePath."validations/inventory.php");
 
     /*  custom exceptions for proper error handling 
         no custom behaviour needed, we just want to catch the proper exception and react accordingly
@@ -56,8 +57,8 @@
         TODO: Custom exception classes for better error handling
         */
         public function __construct($array) {
-           
-            if (!isset($array['name']) || !isset($array['leadername']) || !isset($array['players'])) {
+           //print_r($array);
+           if (!isset($array['name']) || !isset($array['leadername']) || !isset($array['players'])) {
                 throw new InvalidArgumentException("Fill out all required form elements");
             }
             try {
@@ -92,7 +93,7 @@
                 //TODO: Clan image
                 
                 //The following variables can not be set by a normal user, we skip validations here:
-                $this->side = isset($array['side']) ? $array['side'] : "pending";
+                $this->side = isset($array['side']) ? $array['side'] : null;
                 $this->credits = isset($array['credits']) ? $array['credits'] : "0";
                 $this->status = isset($array['status']) ? $array['status'] : "pending";
             }
@@ -136,11 +137,15 @@
         returns a new squad Instance on success
         throws an error if the given player is in no suqad
 
-        TODO: This could be signficantly more elegant with a JOIN-Query
+        TODO: This could be signficantly more elegant !!
         */
         public static function load(PDO $connection, String $username) {
             //first, check if the given player has a squad id
-            $query = "SELECT squadID FROM Player WHERE username = :username";
+            //$query = "SELECT squadID FROM Player WHERE username = :username";
+            $query = "SELECT squadID, Squad.sideID FROM Player 
+                        INNER JOIN Squad ON Player.squadID = Squad.id
+                        WHERE Player.username = :username";
+            
             $stm = $connection->prepare($query);
             $stm->bindParam(":username", $username);
             $stm->execute();
@@ -155,8 +160,31 @@
                 throw new NoSquadException("Player has no squad");
             }
             $squadID = $result['squadID'];
-            //we have the squadID -> Fetch all information about this squad:
-            $query = "SELECT * FROM Squad WHERE id = :id";
+            $sideID = $result['sideID'];
+
+            /* 
+            TODO: How could we do this in ONE sql call?
+            (Problem: The first query returns nothing when squadID = null because we include it in the JOIN)
+            */
+            $query = "";
+            if($sideID != null) {
+                $query = "SELECT Squad.name, Player.username AS leadername, Squad.image, Squad.url AS url, 
+                    Side.name AS side, Squad.credits AS credits, Squad.status AS status
+                    FROM Squad
+                    INNER JOIN Player on Squad.id = Player.squadID
+                    INNER JOIN Side on Squad.sideID = Side.id
+                    WHERE Squad.leaderID = Player.id 
+                    AND Squad.sideID = Side.id
+                    AND Squad.id = :id";
+            }
+            else {
+                $query = "SELECT Squad.name, Player.username AS leadername, Squad.image, Squad.url AS url, 
+                    Squad.credits AS credits, Squad.status AS status
+                    FROM Squad
+                    INNER JOIN Player on Squad.id = Player.squadID
+                    WHERE Squad.leaderID = Player.id 
+                    AND Squad.id = :id";
+            }
             $stm = $connection->prepare($query);
             $stm->bindParam(":id", $squadID);
             $stm->execute();
@@ -165,13 +193,14 @@
             if ($stm->rowCount() == 0) {
                 throw new InvalidArgumentException("A squad with the given id does not exist! (Bad, bad programming...)");
             }
+
             //TODO: Leave nulls be null 
             $result = $stm->fetch(PDO::FETCH_ASSOC);
             $name = $result['name'];
             $url = $result['url'];
             $img = $result['image'];
-            $leader = $result['leaderID'];
-            $side = $result['sideID'];
+            $leader = $result['leadername'];
+            $side = $sideID == null ? "none" : $result['side'];
             $status = $result['status'];
 
             //the caller of this method is also interested in the players belonging to this squad, so fetch them:
@@ -185,12 +214,8 @@
             //constructor wants comma-separated string with players (so we put the array in a string here
             //and the constructor makes an array from this string again ....)
             $playernames = "";
-            $leadername = "";
             while($result = $stm->fetch(PDO::FETCH_ASSOC)) {
-                if ($result['id'] == $leader) {
-                    $leadername = $result['username'];
-                }
-                else {
+                if ($result['id'] != $leader) {
                     $playernames .= $result['username'].",";
                 }
             }
@@ -199,7 +224,7 @@
             //finally, construct a squad object:
             $squad = new Squad(array(
                 'name' => $name, 
-                'leadername' => $leadername,
+                'leadername' => $leader,
                 'players' => $playernames,
                 'side' => $side,
                 'img' => $img,
@@ -282,6 +307,17 @@
             $stm = $connection->prepare($query);
             echo("<h1>".$query."</h1>");
 
+
+            $array = array(
+                ':name' => $this->name,
+                ':url' => $this->url,
+                ':image' => $this->image,
+                ':leader' => $leaderID,
+                ':side' => $this->side,
+                ':credits' => $this->credits 
+            );
+            print_r($array);
+
             $success = $stm->execute(array(
                 ':name' => $this->name,
                 ':url' => $this->url,
@@ -296,9 +332,8 @@
                     Please try again later or contact an admin."); 
             }
 
-            //SQUAD CREATED -> UPDATE PLAYER TABLE
+            //SQUAD CREATED -> UPDATE PLAYER TABLE PLAYER
             $squadID = $connection->lastInsertId();
-            echo("<h1> SquadID: ".$squadID);
             //the squadID was just fetched from the database, no need to prepare
             $query = "UPDATE Player SET squadID = ".$squadID." WHERE username = :username";
             $stm = $connection->prepare($query);
@@ -320,6 +355,9 @@
                     }
                 }
             }
+
+            //ACTIVATE INVENTORY FOR THIS SQUAD
+            Inventory::create($connection, $this->name);
         }
 
         /*

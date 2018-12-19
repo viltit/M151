@@ -29,11 +29,13 @@
             //TODO: Squad image
             echo("
                 <h1>Squad Overview</h1><br>
-                <table class='table table-dark'>
-                    <thead class='thead-dark'>
+                <table class='table'>
+                    <thead class='thead'>
                     <tr>
+                        <th scope='col'>Name</th>
                         <th scope='col'>".$squad->getName()."</th>
                     </tr>
+                    <tr>
                     </thead>
                     <tbody>
                     <tr>

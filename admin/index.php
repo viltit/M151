@@ -18,12 +18,14 @@
     $pageTitle = "Admin Panel";
     $basePath = "../";
 
+    //keep all requires at one place:
     require_once($basePath."includes/headObject.php");
     require_once($basePath."includes/database.php");
     require_once($basePath."validations/itemClass.php");
     require_once($basePath."validations/side.php");
     require_once($basePath."validations/itemType.php");
     require_once($basePath."validations/squad.php");
+    require_once($basePath."validations/inventory.php");
 
     //check if we have post-data, and if so, verify admins login data
     if($_SERVER['REQUEST_METHOD'] == "POST") {

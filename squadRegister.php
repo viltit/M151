@@ -5,6 +5,7 @@
     
         require_once("includes/database.php");
         require_once("validations/squad.php");
+        require_once("validations/inventory.php");
     
         $errors = "";
         $message = "";

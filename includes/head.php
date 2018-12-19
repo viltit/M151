@@ -54,6 +54,7 @@
                 $status = User::fromLogin($username, $password, $handler);
                 if ($status) { 
                     $message = "Hello ".$_SESSION['user']."! You are now logged in.";
+                    //header("location:index.php");  -> invalidates message. Would need own static message class
                 }
                 else {
                     $error .= "Invalid username and / or password";
@@ -70,10 +71,11 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?php echo $pageTitle; ?></title>
-        <!-- CSS from bootsrap 
-        TODO: We seem to have a wrong version (no dark tables etc.)
-        -->
+        <!-- JS and CSS from bootsrap. JS seems to be needed for dropdown menu -->
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+        <script src="bootstrap/js/bootstrap.min.js"></script>
     </head>
 
     <body>
@@ -89,10 +91,6 @@
                     <a class="nav-link" href="">Forum<span class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item active">
-                    <!-- Squad site -->
-                    <a class="nav-link" href="squadPage.php">My Squad<span class="sr-only">(current)</span></a>
-                </li>
-                <li class="nav-item active">
                     <!-- Map -- (dead link => TODO) 
                     a NICE map will be a lot of work. The idea would be to re-use it for the squad managmenet
                     so that squads can select their in-game spawn points directly from the map. This, however, 
@@ -100,6 +98,19 @@
                     -->
                     <a class="nav-link" href="">Tactical Map<span class="sr-only">(current)</span></a>
                 </li>
+                <!-- Dropdown menu for squad management - only display if user is logged in -->
+                <?php if (isset($_SESSION['user'])) { ?>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        My Squad
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="squadOverview.php">Squad Overview</a>
+                    <a class="dropdown-item" href="inventoryOverview.php">Inventory Overview</a>
+                    <a class="dropdown-item" href="#">Inventory Management</a>
+                    </div>
+                </li>
+                <?php } ?>   <!-- i really dislike this mixing of html and php -->
             </ul>
             <!-- User not linked to a session -> display login form and register button -->
             <?php

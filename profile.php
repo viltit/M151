@@ -46,16 +46,27 @@
                 }
                 else {
                     //in case the user changed his username, update the session variable, or this site can not be reloaded ....
-                    $_SESSION['user'] = $user->username();
+                    $_SESSION['user'] = $_POST['username'];
                     $message .= "Your userprofile has been updated.";
                 }
             }
             catch (InvalidArgumentException $e) {
-                $errors .= $e;
+                $errors .= $e->getMessage();
             }
         }
         else if (isset($_POST['updatePassword'])) {
-            //TODO
+            //confirm old password
+            if(!User::fromLogin($_SESSION['user'], $_POST['password'], $connection)) {
+                $errors .= "You entered a wrong password.";
+            }
+            else try {
+                $password = new Password($_POST['passwordNew'], $_POST['passwordNew2']);
+                $user->updatePassword($connection, $password);
+                $message .= "Your password has been updated.";
+            }
+            catch (InvalidArgumentException $e) {
+                $errors .= $e->getMessage();
+            }
         }
     }
 
@@ -116,13 +127,13 @@
     <!-- new password  -->
     <div class="form-group">
         <label for="password2">New Password *</label>
-        <input type="password" name="password2" minlength="6" maxlength="20" required class="form-control"
+        <input type="password" name="passwordNew" minlength="6" maxlength="20" required class="form-control"
                 placeholder="6 to 20 characters">
     </div>
     <!-- confirm new password  -->
     <div class="form-group">
         <label for="password2">Confirm new Password *</label>
-        <input type="password" name="password2" minlength="6" maxlength="20" required class="form-control"
+        <input type="password" name="passwordNew2" minlength="6" maxlength="20" required class="form-control"
                 placeholder="6 to 20 characters">
     </div>
     <button type="submit" name="updatePassword" value="submit" class="btn btn-info">Submit</button>
