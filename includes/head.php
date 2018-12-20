@@ -105,9 +105,9 @@
                         My Squad
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="squadOverview.php">Squad Overview</a>
-                    <a class="dropdown-item" href="inventoryOverview.php">Inventory Overview</a>
-                    <a class="dropdown-item" href="#">Inventory Management</a>
+                        <a class="dropdown-item" href="squadOverview.php">Squad Overview</a>
+                        <a class="dropdown-item" href="inventoryOverview.php">Inventory Overview</a>
+                        <a class="dropdown-item" href="marketplace.php">Marketplace</a>
                     </div>
                 </li>
                 <?php } ?>   <!-- i really dislike this mixing of html and php -->

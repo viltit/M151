@@ -128,15 +128,15 @@
         - parameter forSide: optional, if user only wants to load inventory for one side
         */
         public static function loadAll(PDO $connection, String $orderBy = null, String $forSide = null) {
-            echo("<h1>".$orderBy."</h1>");
-            $query = "SELECT ItemType.name, image, price, scriptName, ItemClass.name AS Class, Side.name AS side 
+            $query = "SELECT ItemType.name, image, price, scriptName, 
+                      ItemClass.name AS Class, Side.name AS side, Side.id AS sideID 
                       FROM ItemType 
                       LEFT JOIN Side ON ItemType.sideID = Side.id 
                       LEFT OUTER JOIN ItemClass ON ItemType.classID = ItemClass.id";
 
             if ($forSide != null) {
-                //TODO: This does no include side = null
-                $query .= " WHERE Side.name = '".$forSide."'";
+                //TODO: This does no include side = null. For now, I just include it
+                $query .= " WHERE Side.name = '".$forSide."' OR Side.id is null";
             }
             //TODO: Solve this with associative array ? ($query .= orders[$order])
             if ($orderBy != null) {
@@ -156,7 +156,6 @@
                     $query .= " ORDER BY scriptName";
                 }
             }
-            print($query);
 
             $stm = $connection->prepare($query);
             

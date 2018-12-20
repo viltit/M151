@@ -21,7 +21,16 @@
                         INNER JOIN Squad ON Inventory.id = Squad.inventoryID
                         INNER JOIN InventoryItem ON Inventory.id = InventoryItem.inventoryID
                         INNER JOIN ItemType ON InventoryItem.typeID = ItemType.id
-                        INNER JOIN ItemClass ON ItemType.classID = ItemClass.id";
+                        INNER JOIN ItemClass ON ItemType.classID = ItemClass.id
+                        WHERE Squad.name = :squad";
+
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":squad", $squad);
+            if (!$stm->execute()) {
+                throw InvalidArgumentException("Database could not load inventory");
+            }
+            
+
         }
 
         /*

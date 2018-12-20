@@ -1,7 +1,7 @@
 <?php
     ini_set("display_errors", 1);
     $pageTitle = "My Squad";
-    $message = $error = "";
+    $message = $error = $squad = "";
 
     include("includes/head.php");
 
@@ -22,9 +22,20 @@
         $handler =  $db = new Database();
         $handler = $db->connect();
 
-        //all possible errors here (player has no squad, database problem, etc.) are handled with throws
-        try {
-            $squad = Squad::load($handler, $_SESSION['user']);
+        if (!isset($_SESSION['squad'])) {
+            try {
+                $squad = Squad::load($handler, $_SESSION['user']);
+                $_SESSION['squad'] = $squad;
+            }
+            catch (InvalidArgumentException $e) {
+                $error = $e->getMessage();
+            }
+        }
+        else {
+            $squad = $_SESSION['squad'];
+        }
+      
+        if (empty($error)) try {
             //Display squad info.
             //TODO: Squad image
             echo("
