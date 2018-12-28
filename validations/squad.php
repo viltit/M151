@@ -430,6 +430,20 @@
             return $result['id'];
         }
 
+        //check if a player is squad leader
+        public static function isLeader(PDO $connection, String $name) {
+            $query = "SELECT Player.username FROM Squad 
+                INNER JOIN Player ON Squad.leaderID = Player.id
+                WHERE Player.username = :name";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":name", $name);
+            $stm->execute();
+            if ($stm->rowCount() == 0) {
+                return false;
+            }
+            return true;
+        }
+
         //private function: get squad id => TODO: Make one function with parameter 
         private function getSquadID(PDO $connection) {
             $query = "SELECT id FROM Squad WHERE name = :name";

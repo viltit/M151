@@ -1,6 +1,6 @@
 <?php
 
-$basePath = $error = $message = "";
+$basePath = $error = $message = $isLeader = "";
 $pageTitle = "Marketplace";
 $orderBy = isset($_GET['orderBy']) ? $_GET['orderBy'] : "";
 
@@ -24,6 +24,16 @@ include("includes/head.php");
 
 $db = new Database();
 $connection = $db->connect();
+
+//user is not a leader? Let him see the page, but he can not perform any action
+if(!isset($_SESSION['squadLeader'])) {
+    $message .= "You are not the leader of your squad. You can view this page, but you are not allowed
+            to buy or sell any items.";
+    $isLeader = false;
+}
+else {
+    $isLeader = true;
+}
 
 try {
     //TODO IMPORTANT: Do NOT load from database EVERY TIME a user buys an item 
@@ -107,13 +117,13 @@ function listMarket($inventory, $market, $squad) {
         $count = isset($inventoryItems[$item->name()->string()]) ? $inventoryItems[$item->name()->string()] : 0;
         $buyStatus = "class='btn btn-success'";
         $buyButton = "&#8592;"; //arrow left
-        if ($squad->getCredits() < $item->price()) {
+        if ($squad->getCredits() < $item->price() || !(isset($_SESSION['squadLeader']))) {
             $buyStatus = "disabled class='btn btn-warning'";
             $buyButton = "&#215;"; //cross
         }
         $sellStatus = "class='btn btn-success'";
         $sellButton = "&#8594;";
-        if ($count == 0) {
+        if ($count == 0 || !(isset($_SESSION['squadLeader']))) {
             $sellStatus = "disabled class='btn btn-warning'";
             $sellButton = "&#215;";
         }

@@ -6,7 +6,7 @@
     tables Inventory, InventoryItem and ItemType
     */
 
-    require_once("validations/itemType.php");
+    require_once($basePath."validations/itemType.php");
 
     class Inventory {
         private $items = array();

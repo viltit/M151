@@ -2,6 +2,7 @@
     require_once("validations/name.php");
     require_once("validations/email.php");
     require_once("validations/password.php");
+    require_once("validations/squad.php");
 
     if (session_status() != PHP_SESSION_ACTIVE) {
         session_start();
@@ -76,6 +77,10 @@
                 $result = $stm->fetch(PDO::FETCH_ASSOC);
                 if (password_verify($password, $result['password'])) {
                     $_SESSION['user'] = $username;
+                    //is the user a squad leader ?
+                    if (Squad::isLeader($connection, $username)) {
+                        $_SESSION['squadLeader'] = "true";
+                    }
                     return true;
                 }
                 else {
