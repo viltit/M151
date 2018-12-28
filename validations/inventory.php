@@ -6,8 +6,12 @@
     tables Inventory, InventoryItem and ItemType
     */
 
+    require_once("validations/itemType.php");
+
     class Inventory {
-        private $items = [];
+        private $items = array();
+        private $squadID;
+        private $id;
         private $status;
 
         /*
@@ -16,12 +20,13 @@
         */
         public function __construct(PDO $connection, String $squad) {
             
-            $query = "SELECT Inventory.status, ItemType.name AS name, ItemClass.name AS class
+            $query = "SELECT Inventory.status, ItemType.name AS name, ItemClass.name AS class,
+                        Squad.id AS squadID, Inventory.id AS id
                         FROM Inventory
                         INNER JOIN Squad ON Inventory.id = Squad.inventoryID
-                        INNER JOIN InventoryItem ON Inventory.id = InventoryItem.inventoryID
-                        INNER JOIN ItemType ON InventoryItem.typeID = ItemType.id
-                        INNER JOIN ItemClass ON ItemType.classID = ItemClass.id
+                        LEFT OUTER JOIN InventoryItem ON Inventory.id = InventoryItem.inventoryID
+                        LEFT OUTER JOIN ItemType ON InventoryItem.typeID = ItemType.id
+                        LEFT OUTER JOIN ItemClass ON ItemType.classID = ItemClass.id
                         WHERE Squad.name = :squad";
 
             $stm = $connection->prepare($query);
@@ -30,7 +35,19 @@
                 throw InvalidArgumentException("Database could not load inventory");
             }
             
-
+            while ($result = $stm->fetch(PDO::FETCH_ASSOC)) {
+                if (!isset($this->id)) {
+                    $this->id = $result['id'];
+                    $this->squadID = $result['squadID'];
+                    $this->status = $result['status'];
+                }
+                //because the database saves each item and I did not get how to count them with an left outer join, we need to count them here
+                if (isset($result['name'])) {
+                    $count = isset($this->items[$result['name']]) ? $this->items[$result['name']] : 0;
+                    $this->items[$result['name']] = $count + 1;
+                }
+            }
+            print_r($this);
         }
 
         /*
@@ -67,5 +84,67 @@
                throw new InvalidArgumentException("Database could not create a new Inventory."); 
             }
         }
+
+        /*
+        remove an item from this inventory
+        */
+        public function remove(PDO $connection, String $name) {
+            $id = ItemType::getID($connection, $name);
+            $query = "SELECT id FROM InventoryItem WHERE typeID = :typeID AND inventoryID = :inventoryID";
+            $stm = $connection->prepare($query);
+            $stm->execute(array(
+                ":typeID" => $id,
+                ":inventoryID" => $this->id
+            ));
+            if ($stm->rowCount() == 0) {
+                throw new InvalidArgumentException("Can not remove item ".$name." from Inventory because it does not exist.");
+            }
+            //just remove the first entry:
+            $result = $stm->fetch(PDO::FETCH_ASSOC)['id'];
+            $query = "DELETE FROM InventoryItem WHERE id = :id";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":id", $result);
+            $stm->execute();
+
+            //finally, adjust self:
+            $this->items[$name] -= 1;
+        }
+
+        /*
+        add an item to this inventory and saves it in the database
+        - parameter $name: The name of the item to add
+        - TODO: Work with the items id to prevent unnecessary database access
+        */
+        public function add(PDO $connection, String $name) {
+            //get the id of this item
+            $query = "SELECT id FROM ItemType WHERE name = :name";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":name", $name);
+            $stm->execute();
+            $id = $stm->fetch(PDO::FETCH_ASSOC)['id'];
+
+            //create a new inventory item that references to this squad and this itemType
+            $query = "INSERT INTO InventoryItem (inventoryID, typeID) VALUES (:inventoryID, :typeID)";
+            $stm = $connection->prepare($query);
+            if (!$stm->execute(array(
+                ":inventoryID" => $this->id,
+                ":typeID" => $id
+            ))) {
+                throw new InvalidArgumentException("Database refused purchase!");
+            }
+
+            //update self:
+            if (isset($this->items[$name])) {
+                $this->items[$name] += 1;
+            }
+            else {
+                $this->items[$name] = 1;
+            }
+        }
+
+        public function items() {
+            return $this->items;
+        }
+
     }
 ?>

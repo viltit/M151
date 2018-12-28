@@ -187,6 +187,21 @@
             return $items;
         }
 
+        /*
+        get the id from items name
+        */
+        public static function getID(PDO $connection, String $name) {
+            $query = "SELECT id FROM ItemType WHERE name = :name";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":name", $name);
+            $stm->execute();
+            if ($stm->rowCount() != 1) {
+                throw new InvalidArgumentException("Can not fetch id for item named ".$name);
+            }
+            $id = $stm->fetch(PDO::FETCH_ASSOC)['id'];
+            return $id;
+        }
+
         //getters:
         public function name() {
             return $this->name;

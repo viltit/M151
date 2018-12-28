@@ -45,13 +45,28 @@ catch (InvalidArgumentException $e) {
 }
 
 //check for an item to buy:
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['buyItem'])) {
-    /* 
-    TODO: 
-    1) check if the squad has enough credits
-    2) add item to the squads inventory
-    3) save the transaction in the database
-    */
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    try {
+        if (isset($_POST['buyItem']) && isset($_POST['name'])) {
+            $inventory->add($connection, $_POST['name']);
+            $squad->setCredits($squad->getCredits() - $_POST['price']);
+            //TODO: When do we update the squads credits in the database? After EVERY purchase seems like a waist
+            //TODO: Let the player buy stuff in a shoping-cart and only make a transaction after shopping-cart is
+            //finished
+            $squad->updateCredits($connection);
+            unset($_POST['name']); //TODO Look at Post-Redirect-Get-Pattern
+        }
+        else if (isset($_POST['sellItem']) && isset($_POST['name'])) {
+            $inventory->remove($connection, $_POST['name']);
+            $squad->setCredits($squad->getCredits() + $_POST['price']);
+            //same todos as above
+            $squad->updateCredits($connection);
+            unset($_POST['name']); 
+        }
+    }
+    catch (InvalidArgumentException $e) {
+        $error .= $e->getMessage();
+    }
 }
 
 //display errors or messages
@@ -65,24 +80,79 @@ if (!empty($error)) {
 //list the squads inventory on the left side, list the marketplace on the right side
 //the div's here are bootstraps flexbox
 //THIS PART WOULD REALLY BENEFIT FROM AJAX AND OR / JQUERY, but I can't be bothered to learn these too now
-echo("
-    <div class='d-flex'>
-        <div class='p-2' style='width:50%;'>
-            <h2>Inventory</h2>
-        </div>
-        <div class='p-2' style='width:50%;'>
-            <h2>Market</h1>");
-                listMarket($market);
-        echo("
-        </div>
-    </div>
-");
+echo("<h1>Market</h1><br>");
+echo("<b>Your credits: ".$squad->getCredits()."</b><br><br>");
+listMarket($inventory, $market, $squad);
+    
 
 
 include("includes/foot.php");
 
-//helper function
-function listMarket($market) {
+//helper functions
+function listMarket($inventory, $market, $squad) {
+    $inventoryItems = $inventory->items();
+    echo("<table class='table'>
+    <thead>
+    <tr>
+        <th scope='col'>You have</th>
+        <th scope='col'></th>
+        <th scope='col'>Image</th>
+        <th scope='col'><a href='marketplace.php?orderBy=byName'>Name</a></th>
+        <th scope='col'><a href='marketplace.php?orderBy=byPrice'>Price</a></th>
+        <th scope='col'><a href='marketplace.php?orderBy=byClass'>Class</a></th>
+        <th></th>
+    </tr>
+    </thead>");
+    foreach($market as $item) {
+        $count = isset($inventoryItems[$item->name()->string()]) ? $inventoryItems[$item->name()->string()] : 0;
+        $buyStatus = "class='btn btn-success'";
+        $buyButton = "&#8592;"; //arrow left
+        if ($squad->getCredits() < $item->price()) {
+            $buyStatus = "disabled class='btn btn-warning'";
+            $buyButton = "&#215;"; //cross
+        }
+        $sellStatus = "class='btn btn-success'";
+        $sellButton = "&#8594;";
+        if ($count == 0) {
+            $sellStatus = "disabled class='btn btn-warning'";
+            $sellButton = "&#215;";
+        }
+
+        echo("<tr>
+                <td style='vertical-align:middle'>".$count."</td>
+                <td style='vertical-align:middle;'>
+                    <div id='".$item->name()."'>
+                    <form class='form-group' name='buy' action='marketplace.php#".$item->name()."' method='POST' id='activate".$item->name()."'>
+                        <input type='hidden' name='name' value='".$item->name()."'>
+                        <input type='hidden' name='price' value='".$item->price()."'>
+                        <input type='hidden' name='buyItem' value='true'>
+                        <button type='submit' ".$buyStatus.">
+                            <span>".$buyButton."</span> 
+                        </button>
+                    </form>
+                    <form class='form-group' name='sell' action='marketplace.php#".$item->name()."' method='POST' id='activate".$item->name()."'>
+                    <input type='hidden' name='name' value='".$item->name()."'>
+                    <input type='hidden' name='price' value='".$item->price()."'>
+                    <input type='hidden' name='sellItem' value='true'>
+                    <button type='submit' ".$sellStatus.">
+                        <span>".$sellButton."</span> 
+                    </button>
+                </form>
+                </td>
+                <td style='width:25%; vertical-align:middle;'>
+                    <a href='images/inventory/".$item->image().".jpg' target='_blank'> 
+                        <img src='images/inventory/".$item->image().".jpg' width='100%'>
+                    </a></td>
+                <td style='vertical-align:middle;'>".$item->name()."</td>
+                <td style='vertical-align:middle;'>".$item->price()."</td>
+                <td style='vertical-align:middle;'>".$item->class()."</td>
+        ");
+    }
+}
+
+function listInventory($market, $inventory, $squad) {
+    $inventoryItems = $inventory->items();
+    print_r($inventoryItems);
     echo("<table class='table'>
     <thead>
     <tr>
@@ -94,24 +164,16 @@ function listMarket($market) {
         <th></th>
     </tr>
     </thead>");
-    foreach($market as $item) {
-        echo("<tr>
-                <td style='vertical-align:middle;'>
-                    <div id='".$item->name()."'>
-                    <form class='form-group' name='activate' action='marketplace.php#".$item->name()."' method='POST' id='activate".$item->name()."'>
-                        <input type='hidden' name='name' value='".$item->name()."'>
-                        <input type='submit' class='btn btn-success' name='buyItem' value='Buy'></form>
-                    </form>
-                </td>
-                <td style='width:40%; vertical-align:middle;'>
-                    <a href='images/inventory/".$item->image().".jpg' target='_blank'> 
-                        <img src='images/inventory/".$item->image().".jpg' width='100%'>
-                    </a></td>
-                <td style='vertical-align:middle;'>".$item->name()."</td>
-                <td style='vertical-align:middle;'>".$item->price()."</td>
-                <td style='vertical-align:middle;'>".$item->class()."</td>
-        ");
-    }
+        //problem: we save each item in the database -> how to get the number?
+        foreach($market as $item) {
+            echo($item->name());
+           
+            echo("<tr>
+                    <td style='vertical-align:middle;'>".$item->name()."</td>
+                    <td style='vertical-align:middle;'>".$count."</td>
+            ");
+        }
+    echo("</table>");
 }
 
 ?>

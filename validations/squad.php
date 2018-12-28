@@ -131,6 +131,9 @@
         public function getStatus() {
             return $this->status;
         }
+        public function setCredits(Int $value) {
+            $this->credits = $value;
+        }
 
         /* 
         static function for loading a squad for a given player name
@@ -201,6 +204,7 @@
             $img = $result['image'];
             $leader = $result['leadername'];
             $side = $sideID == null ? "none" : $result['side'];
+            $credits = $result['credits'];
             $status = $result['status'];
 
             //the caller of this method is also interested in the players belonging to this squad, so fetch them:
@@ -229,7 +233,8 @@
                 'side' => $side,
                 'img' => $img,
                 'url' => $url,
-                'status' => $status
+                'status' => $status,
+                'credits' => $credits
             ));
             return $squad;
         }
@@ -358,6 +363,18 @@
 
             //ACTIVATE INVENTORY FOR THIS SQUAD
             Inventory::create($connection, $this->name);
+        }
+
+        /*
+        update the squads credits in the database
+        */
+        public function updateCredits(PDO $connection) {
+            $query = "UPDATE Squad SET credits = :credits WHERE name = :name";
+            $stm = $connection->prepare($query);
+            $stm->execute(array(
+                ":credits" => $this->credits,
+                ":name" => $this->name
+            ));
         }
 
         /*

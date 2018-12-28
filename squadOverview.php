@@ -22,7 +22,8 @@
         $handler =  $db = new Database();
         $handler = $db->connect();
 
-        if (!isset($_SESSION['squad'])) {
+        //TODO: LOOK AT AUTO-LOADING CLASSES. RIGHT NOW WE NEED TO RELOAD THE SQUAD FROM DATABASE EVERY TIME
+        //if (!isset($_SESSION['squad'])) {
             try {
                 $squad = Squad::load($handler, $_SESSION['user']);
                 $_SESSION['squad'] = $squad;
@@ -30,10 +31,10 @@
             catch (InvalidArgumentException $e) {
                 $error = $e->getMessage();
             }
-        }
-        else {
-            $squad = $_SESSION['squad'];
-        }
+        //}
+        //else {
+        //    $squad = $_SESSION['squad'];
+        //}
       
         if (empty($error)) try {
             //Display squad info.
