@@ -96,7 +96,7 @@
                     so that squads can select their in-game spawn points directly from the map. This, however, 
                     calls for more than just a big .png -> leaflet -> lot of work -> do later)
                     -->
-                    <a class="nav-link" href="">Tactical Map<span class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="map.php">Tactical Map<span class="sr-only">(current)</span></a>
                 </li>
                 <!-- Dropdown menu for squad management - only display if user is logged in -->
                 <?php if (isset($_SESSION['user'])) { ?>

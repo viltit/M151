@@ -26,17 +26,27 @@
         //if (!isset($_SESSION['squad'])) {
             try {
                 $squad = Squad::load($handler, $_SESSION['user']);
-                $_SESSION['squad'] = $squad;
+                //$_SESSION['squad'] = $squad;
             }
             catch (InvalidArgumentException $e) {
                 $error = $e->getMessage();
+            }
+            catch (NoSquadException $e) {
+                $error = "
+                    You are not part of a squad yet! <br>
+                    <ul>
+                    <li>If you have at least three players ready, you can apply for your own squad
+                    <a href='squadRegister.php'><button type='button' class='btn btn-primary btn-sm'>here</button></a></li>
+                    <li>If you are part of an existing squad, your squad leader can register you.</li>
+                    <li>If you are alone and want to be part of a squad, please contanct an admin.</li>
+                    </ul>";
             }
         //}
         //else {
         //    $squad = $_SESSION['squad'];
         //}
       
-        if (empty($error)) try {
+        if (empty($error)) {
             //Display squad info.
             //TODO: Squad image
             echo("
@@ -85,22 +95,13 @@
                     </div>
                 ");
             }
-
-            //TODO: Menu item for inventory inspection
         }
-        catch (InvalidArgumentException $e) {
-            echo ("<div class=\"alert alert-danger\" role=\"alert\">".$e->getMessage()."</div>");
+        //display errors or messages
+        if (!empty($message)) {
+            echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
         }
-        catch (NoSquadException $e) {
-            echo("<div class=\"alert alert-danger\" role=\"alert\">
-                You are not part of a squad yet! <br>
-                <ul>
-                <li>If you have at least three players ready, you can apply for your own squad
-                <a href='squadRegister.php'><button type='button' class='btn btn-primary btn-sm'>here</button></a></li>
-                <li>If you are part of an existing squad, your squad leader can register you.</li>
-                <li>If you are alone and want to be part of a squad, please contanct an admin.</li>
-                </ul>
-            </div>");
+        if (!empty($error)) {
+            echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
         }
     }
 

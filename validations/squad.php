@@ -146,7 +146,7 @@
             //first, check if the given player has a squad id
             //$query = "SELECT squadID FROM Player WHERE username = :username";
             $query = "SELECT squadID, Squad.sideID FROM Player 
-                        INNER JOIN Squad ON Player.squadID = Squad.id
+                        LEFT OUTER JOIN Squad ON Player.squadID = Squad.id
                         WHERE Player.username = :username";
             
             $stm = $connection->prepare($query);
@@ -156,7 +156,7 @@
             //row count is zero? This username does not exist. 
             //This should not happen if we programm carefully, but we check to be sure
             if ($stm->rowCount() == 0) {
-               throw new InvalidArgumentException("A player with the given name does not exist");
+               throw new InvalidArgumentException("A player with the name ".$username." does not exist");
             }
             $result = $stm->fetch(PDO::FETCH_ASSOC);
             if (is_null($result['squadID'])) {

@@ -10,6 +10,7 @@
 
     class Inventory {
         private $items = array();
+        private $ingameItems = array(); //TODO: fix ad hoc solution
         private $squadID;
         private $id;
         private $status;
@@ -21,7 +22,7 @@
         public function __construct(PDO $connection, String $squad) {
             
             $query = "SELECT Inventory.status, ItemType.name AS name, ItemClass.name AS class,
-                        Squad.id AS squadID, Inventory.id AS id
+                        Squad.id AS squadID, Inventory.id AS id, InventoryItem.status AS itemStatus
                         FROM Inventory
                         INNER JOIN Squad ON Inventory.id = Squad.inventoryID
                         LEFT OUTER JOIN InventoryItem ON Inventory.id = InventoryItem.inventoryID
@@ -42,12 +43,28 @@
                     $this->status = $result['status'];
                 }
                 //because the database saves each item and I did not get how to count them with an left outer join, we need to count them here
-                if (isset($result['name'])) {
+                //we also need to differentiate the status of the item
+                if (isset($result['name']) && $result['itemStatus'] == 'inStore') {
                     $count = isset($this->items[$result['name']]) ? $this->items[$result['name']] : 0;
                     $this->items[$result['name']] = $count + 1;
                 }
+                else if (isset($result['name']) && $result['itemStatus'] == 'inGame') {
+                    $count = isset($this->$ingameItems[$result['name']]) ? $this->ingameItems[$result['name']] : 0;
+                    $this->ingameItems[$result['name']] = $count + 1;
+                }
             }
             print_r($this);
+        }
+
+        //getters:
+        public function status() {
+            return $this->status;
+        }
+        public function items() {
+            return $this->items;
+        }
+        public function ingameItems() {
+            return $this->ingameItems;
         }
 
         /*
@@ -124,7 +141,7 @@
             $id = $stm->fetch(PDO::FETCH_ASSOC)['id'];
 
             //create a new inventory item that references to this squad and this itemType
-            $query = "INSERT INTO InventoryItem (inventoryID, typeID) VALUES (:inventoryID, :typeID)";
+            $query = "INSERT INTO InventoryItem (inventoryID, typeID, status) VALUES (:inventoryID, :typeID, 'inStore')";
             $stm = $connection->prepare($query);
             if (!$stm->execute(array(
                 ":inventoryID" => $this->id,
@@ -141,10 +158,5 @@
                 $this->items[$name] = 1;
             }
         }
-
-        public function items() {
-            return $this->items;
-        }
-
     }
 ?>
