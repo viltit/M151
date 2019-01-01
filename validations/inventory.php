@@ -49,7 +49,7 @@
                     $this->items[$result['name']] = $count + 1;
                 }
                 else if (isset($result['name']) && $result['itemStatus'] == 'inGame') {
-                    $count = isset($this->$ingameItems[$result['name']]) ? $this->ingameItems[$result['name']] : 0;
+                    $count = isset($this->ingameItems[$result['name']]) ? $this->ingameItems[$result['name']] : 0;
                     $this->ingameItems[$result['name']] = $count + 1;
                 }
             }
@@ -107,7 +107,9 @@
         */
         public function remove(PDO $connection, String $name) {
             $id = ItemType::getID($connection, $name);
-            $query = "SELECT id FROM InventoryItem WHERE typeID = :typeID AND inventoryID = :inventoryID";
+            $query = "SELECT id FROM InventoryItem WHERE typeID = :typeID 
+                AND inventoryID = :inventoryID
+                AND status = 'inStore'";
             $stm = $connection->prepare($query);
             $stm->execute(array(
                 ":typeID" => $id,
@@ -156,6 +158,45 @@
             }
             else {
                 $this->items[$name] = 1;
+            }
+        }
+
+        /* 
+            set an inventory item to status 'inGame' 
+            - parameter toGame: if true, the item will be tagged as 'inGame', if false as 'inCamp'
+        */
+        public function toGame(PDO $connection, String $name, Bool $toGame) {
+            $id = ItemType::getID($connection, $name);
+            $nowStatus = $toGame ? 'inStore' : 'inGame';
+            $futureStatus = $toGame? 'inGame' : 'inStore';
+            $query = "SELECT id FROM InventoryItem WHERE typeID = :typeID 
+                AND inventoryID = :inventoryID
+                AND status = :status";
+            $stm = $connection->prepare($query);
+            $stm->execute(array(
+                ":typeID" => $id,
+                ":inventoryID" => $this->id,
+                ":status" => $nowStatus
+            ));
+            if ($stm->rowCount() == 0) {
+                throw new InvalidArgumentException("Can not move item ".$name." to game because it does not exist.");
+            }
+   
+            $result = $stm->fetch(PDO::FETCH_ASSOC)['id'];
+            $query = "UPDATE InventoryItem SET status = :status WHERE id = :id";
+            $stm = $connection->prepare($query);
+            $stm->bindParam(":id", $result);
+            $stm->bindParam(":status", $futureStatus);
+            $stm->execute();
+
+            //finally, adjust self:
+            if ($toGame) {
+                $this->items[$name] -= 1;
+                $this->ingameItems[$name] += 1;
+            }
+            else {
+                $this->items[$name] += 1;
+                $this->ingameItems[$name] -= 1;
             }
         }
     }
