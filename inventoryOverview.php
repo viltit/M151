@@ -11,11 +11,6 @@
 
     include("includes/head.php");
 
-    require_once("includes/database.php");
-    require_once("validations/squad.php");
-    require_once("validations/inventory.php");
-    require_once("validations/user.php");
-
     if (session_status() != PHP_SESSION_ACTIVE) {
         session_start();
     }
@@ -26,17 +21,37 @@
     if (!isset($_SESSION['user'])) {
         header("location: index.php");
     }
-    else if (!isset($_SESSION['squadLeader'])) {
-        $message .= "You are not the leader of your squad. You can view this page, but you are not allowed
-                to make any transactions.";
-    }
 
+    require_once("includes/database.php");
+    require_once("validations/squad.php");
+    require_once("validations/inventory.php");
+    require_once("validations/user.php");
+    require_once("includes/squadStatus.php");
+
+    //check the squads status
     $db = new Database();
     $connection = $db->connect();
+    $status = getSquadStatus($connection);
+    $squad = "";
 
-    //TODO: Identical database-access like in squadOverwiew -> set a session variable ?
-    $squad = Squad::load($connection, $_SESSION['user']);
-    $inventory = new Inventory($connection, $squad->getName());
+    if (isset($status['error'])) {
+        $error .= $status['error'];
+    }
+    else {
+        $squad = $status['squad'];
+    }
+    if (isset($status['message'])) {
+        $message .=  $status['message'];
+    }
+    //user is not squad leader? Let him see the page, but he can not perform any action
+    if(empty($error) && !isset($_SESSION['squadLeader'])) {
+        $message .= "You are not the leader of your squad. You can view this page, but you are not allowed
+                to buy or sell any items.";
+        $isLeader = false;
+    }
+    else {
+        $isLeader = true;
+    }
 
     //display errors or messages
     if (!empty($message)) {
@@ -44,22 +59,35 @@
     }
     if (!empty($error)) {
         echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
-    }    
-
-    if ($inventory->status() == "open") {
-        displayInventory($inventory);
-    }
-    else {
-        echo("<h1>CLOSED</h1>");
     }
 
-    /*
-    else if ($inventory->status() == "pending") {
-        //todo
+    if (empty($error)) {
+        //TODO: Identical database-access like in squadOverwiew -> set a session variable ?
+        $inventory = new Inventory($connection, $squad->getName());
+
+        //display errors or messages
+        if (!empty($message)) {
+            echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
+        }
+        if (!empty($error)) {
+            echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
+        }    
+
+        if ($inventory->status() == "open") {
+            displayInventory($inventory);
+        }
+        else {
+            echo("<h1>CLOSED</h1>");
+        }
+
+        /*
+        else if ($inventory->status() == "pending") {
+            //todo
+        }
+        else if ($inventory->status() == "closed") {
+            //todo
+        } */
     }
-    else if ($inventory->status() == "closed") {
-        //todo
-    } */
 
     include("includes/foot.php");
 

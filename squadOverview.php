@@ -4,9 +4,9 @@
     $message = $error = $squad = "";
 
     include("includes/head.php");
-
     require_once("includes/database.php");
     require_once("validations/squad.php");
+    require_once("includes/squadStatus.php");
 
     if (session_status() != PHP_SESSION_ACTIVE) {
         session_start();
@@ -15,13 +15,44 @@
     session_regenerate_id();
 
     if (!isset($_SESSION['user'])) {
-        echo ("<div class=\"alert alert-danger\" role=\"alert\">You must be logged in to view this page.</div>");
+        header("location:index.php");
+    }
+
+    //TODO: Check if user is in a squad
+    $handler =  $db = new Database();
+    $handler = $db->connect();
+
+    //check the squads status
+    $status = getSquadStatus($handler);
+    $squad = "";
+    if (isset($status['error'])) {
+        $error .= $status['error'];
     }
     else {
-        //TODO: Check if user is in a squad
-        $handler =  $db = new Database();
-        $handler = $db->connect();
+        $squad = $status['squad'];
+    }
+    if (isset($status['message'])) {
+        $message .=  $status['message'];
+    }
+    //user is not squad leader? Let him see the page, but he can not perform any action
+    if(empty($error) && !isset($_SESSION['squadLeader'])) {
+        $message .= "You are not the leader of your squad. You can view this page, but you are not allowed
+                to buy or sell any items.";
+        $isLeader = false;
+    }
+    else {
+        $isLeader = true;
+    }
 
+    //display errors or messages
+    if (!empty($message)) {
+        echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
+    }
+    if (!empty($error)) {
+        echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
+    }
+
+    if (empty($error)) {
         //TODO: LOOK AT AUTO-LOADING CLASSES. RIGHT NOW WE NEED TO RELOAD THE SQUAD FROM DATABASE EVERY TIME
         //if (!isset($_SESSION['squad'])) {
             try {
@@ -95,13 +126,6 @@
                     </div>
                 ");
             }
-        }
-        //display errors or messages
-        if (!empty($message)) {
-            echo "<div class=\"alert alert-success\" role=\"alert\">".$message."</div>";
-        }
-        if (!empty($error)) {
-            echo "<div class=\"alert alert-danger\" role=\"alert\">".$error."</div>";
         }
     }
 

@@ -27,8 +27,8 @@
                 if (empty($user->error())) {
                     $message = "Your registration was succesful.";
                     //log the user in:
-                    $_SESSION['user'] = $user->name()->string();
-                    header("location:index.php");
+                    $_SESSION['user'] = $user->username();
+                    header("location:confirmRegister.php");
                 }
                 else {
                     $errors .= $user->error();
