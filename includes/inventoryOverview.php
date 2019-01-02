@@ -6,11 +6,6 @@
     */
 
     ini_set("display_errors", 1);
-    $pageTitle = "My Squad";
-    $message = $error = "";
-
-    include("includes/head.php");
-
     if (session_status() != PHP_SESSION_ACTIVE) {
         session_start();
     }
@@ -18,19 +13,12 @@
     //this is a sensible area (do NOT let the enemy see your inventory). So we regenerate the session:
     session_regenerate_id();
 
+    $message = $error = "";
+
     if (!isset($_SESSION['user'])) {
         header("location: index.php");
     }
 
-    require_once("includes/database.php");
-    require_once("validations/squad.php");
-    require_once("validations/inventory.php");
-    require_once("validations/user.php");
-    require_once("includes/squadStatus.php");
-
-    //check the squads status
-    $db = new Database();
-    $connection = $db->connect();
     $status = getSquadStatus($connection);
     $squad = "";
 
@@ -92,8 +80,6 @@
         */
     }
 
-    include("includes/foot.php");
-
     //helper function
     function displayInventory(Inventory $inventory, $market) {
         echo("
@@ -135,6 +121,7 @@
                 $toCampButton = "&#215;"; //cross
             }
 
+            //This part would REALLY benefit from AJAX
             echo("<tr>");
             echo("
                 <td style='width:25%; vertical-align:middle;'>
@@ -147,14 +134,14 @@
                 <td style='vertical-align:middle;'>".$count1."</td>
                 <td style='vertical-align:middle;'>
                 <div id='".$item->name()."'>
-                    <form class='form-group' name='toGame' action='inventoryOverview.php#".$item->name()."' method='POST' id='".$item->name()."'>
+                    <form class='form-group' name='toGame' action='index.php?goto=".$item->name()."' method='POST' id='".$item->name()."'>
                         <input type='hidden' name='name' value='".$item->name()."'>
                         <input type='hidden' name='toGame' value='true'>
                         <button type='submit' ".$toGameStatus.">
                             <span>".$toGameButton."</span> 
                         </button>
                     </form>
-                    <form class='form-group' name='toCamp' action='inventoryOverview.php#".$item->name()."' method='POST' id='".$item->name()."'>
+                    <form class='form-group' name='toCamp' action='index.php?goto=".$item->name()."' method='POST' id='".$item->name()."'>
                         <input type='hidden' name='name' value='".$item->name()."'>
                         <input type='hidden' name='toCamp' value='true'>
                         <button type='submit' ".$toCampStatus.">

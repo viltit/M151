@@ -1,12 +1,15 @@
 <?php
-    
-    session_start();
-    //this script should only be called from another scripts that already validated the session
-    if (!isset($_SESSION['user'])) {
-        header("location:index.php");
-    }
 
     function getSquadStatus(PDO $connection) {
+
+        if(session_status() != PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+        //this script should only be called from another scripts that already validated the session
+        if (!isset($_SESSION['user'])) {
+            header("location:index.php");
+        }
+
         $result = array();
         try {
             $squad = Squad::load($connection, $_SESSION['user']);
