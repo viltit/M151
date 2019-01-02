@@ -31,7 +31,7 @@
                 You are not part of a squad yet! <br>
                 <ul>
                 <li>If you have at least three players ready, you can apply for your own squad
-                <a href='squadRegister.php'><button type='button' class='btn btn-primary btn-sm'>here</button></a></li>
+                <a href='index.php?content=squadRegister'><button type='button' class='btn btn-primary btn-sm'>here</button></a></li>
                 <li>If you are part of an existing squad, your squad leader can register you.</li>
                 <li>If you are alone and want to be part of a squad, please contanct an admin.</li>
                 </ul>";

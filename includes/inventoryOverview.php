@@ -134,14 +134,14 @@
                 <td style='vertical-align:middle;'>".$count1."</td>
                 <td style='vertical-align:middle;'>
                 <div id='".$item->name()."'>
-                    <form class='form-group' name='toGame' action='index.php?goto=".$item->name()."' method='POST' id='".$item->name()."'>
+                    <form class='form-group' name='toGame' action='index.php#".$item->name()."' method='POST' id='".$item->name()."'>
                         <input type='hidden' name='name' value='".$item->name()."'>
                         <input type='hidden' name='toGame' value='true'>
                         <button type='submit' ".$toGameStatus.">
                             <span>".$toGameButton."</span> 
                         </button>
                     </form>
-                    <form class='form-group' name='toCamp' action='index.php?goto=".$item->name()."' method='POST' id='".$item->name()."'>
+                    <form class='form-group' name='toCamp' action='index.php#".$item->name()."' method='POST' id='".$item->name()."'>
                         <input type='hidden' name='name' value='".$item->name()."'>
                         <input type='hidden' name='toCamp' value='true'>
                         <button type='submit' ".$toCampStatus.">
@@ -154,56 +154,6 @@
                 ");
 
             echo("</tr>");
-
-            /*
-            //enable or disable button to sell and buy this item
-            $buyStatus = "class='btn btn-success'";
-            $buyButton = "&#8592;"; //arrow left
-            if ($squad->getCredits() < $item->price() || !(isset($_SESSION['squadLeader']))) {
-                $buyStatus = "disabled class='btn btn-warning'";
-                $buyButton = "&#215;"; //cross
-            }
-            $sellStatus = "class='btn btn-success'";
-            $sellButton = "&#8594;";
-            if ($count1 == 0 || !(isset($_SESSION['squadLeader']))) {
-                $sellStatus = "disabled class='btn btn-warning'";
-                $sellButton = "&#215;";
-            }
-    
-            echo("<tr>
-                    <td style='vertical-align:middle'><span class='text-success'>".$count1."</span>
-                        +<span class='text-warning'>".$count2."<span/></td>
-                    <td style='vertical-align:middle;'>
-                        <div id='".$item->name()."'>
-                        <form class='form-group' name='buy' action='marketplace.php#".$item->name()."' method='POST' id='activate".$item->name()."'>
-                            <input type='hidden' name='name' value='".$item->name()."'>
-                            <input type='hidden' name='price' value='".$item->price()."'>
-                            <input type='hidden' name='buyItem' value='true'>
-                            <button type='submit' ".$buyStatus.">
-                                <span>".$buyButton."</span> 
-                            </button>
-                        </form>
-                        <form class='form-group' name='sell' action='marketplace.php#".$item->name()."' method='POST' id='activate".$item->name()."'>
-                        <input type='hidden' name='name' value='".$item->name()."'>
-                        <input type='hidden' name='price' value='".$item->price()."'>
-                        <input type='hidden' name='sellItem' value='true'>
-                        <button type='submit' ".$sellStatus.">
-                            <span>".$sellButton."</span> 
-                        </button>
-                    </form>
-                    </td>
-                    <td style='width:25%; vertical-align:middle;'>
-                        <a href='images/inventory/".$item->image().".jpg' target='_blank'> 
-                            <img src='images/inventory/".$item->image().".jpg' width='100%'>
-                        </a></td>
-                    <td style='vertical-align:middle;'>".$item->name()."</td>
-                    <td style='vertical-align:middle;'>".$item->price()."</td>
-                    <td style='vertical-align:middle;'>".$item->class()."</td>
-            ");
-            */
         }
-
     }
-
-
 ?>

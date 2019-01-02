@@ -26,14 +26,20 @@
         "inventoryOverview",
         "marketplace",
         "logout",
-        "profile"
+        "register",
+        "profile",
+        "squadRegister"
     ];
 
     $allowedPost = array(
         "toGame" => "inventoryOverview",
         "toCamp" => "inventoryOverview",
         "buyItem" => "marketplace",
-        "sellItem" => "marketplace"
+        "sellItem" => "marketplace",
+        "updateProfile" => "profile",
+        "updatePassword" => "profile",
+        "register" => "register",
+        "squadRegister" => "squadRegister"
     );
 
     /* ------------- PREPARE DATABASE CONNECTION ------------------------------------------------- */
@@ -71,6 +77,7 @@
     }
     else {
         $head->addForm($loginFormTypes, $loginFormNames, $loginFormPlaceholders);
+        $head->addMenuItem(false, "<b>Not a user yet? Register here", "index.php?content=register");
     }
 
     $head->display();
