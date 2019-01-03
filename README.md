@@ -21,7 +21,8 @@
   `docker run -d --name apache --link a3:db -v "$PWD":/usr/local/apache2/htdocs/  -p 8080 httpd:2.4`
   
   dieses Kommando muss vom lokalen Webroot-Verzeichnis ausgeführt werden: es verbindet das aktuelle Verzeichnis ($PWD) mit dem        htdocs-Verzeichnis auf dem Container. Der MySQL-Container muss schon existieren, da er hier mit --link verbunden wird.
-  - dem neuen Docker-Container fehlt noch die PDO-Extension: Mit 
+  
+- dem neuen Docker-Container fehlt noch die PDO-Extension: Mit 
   
   `docker exec -it apache /bin/bash` 
   
