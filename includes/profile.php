@@ -46,6 +46,7 @@
             }
         }
         else if (isset($_POST['updatePassword'])) {
+            echo("<h1>Pass</h1>");
             //confirm old password
             if(!User::fromLogin($_SESSION['user'], $_POST['password'], $connection)) {
                 $errors .= "You entered a wrong password.";

@@ -49,6 +49,10 @@
             catch (InvalidArgumentException $e) {
                 $this->error .= "Your email is invalid.";
             }
+            //if confirmation Password is not set, copy original:
+            if (!isset($array['password2'])) {
+                $array['password2'] = $array['password'];
+            }
             try {
                 $this->password = new Password($array['password'], $array['password2']);
             }
@@ -149,6 +153,7 @@
         - WARNING: User needs his id set for this function
         */
         public function update(PDO $connection, $array) {
+            $this->error = "";
             $needUsernameCheck = false;
             //update values given by $array+
             foreach($array as $key => $value) {
