@@ -5,6 +5,7 @@
         header("location:index.php");
     }
 
+
     //check if we have GET-parameters and if so, display the proper menu
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         //print_r($_POST);

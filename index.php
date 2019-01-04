@@ -77,7 +77,7 @@
     }
     else {
         $head->addForm($loginFormTypes, $loginFormNames, $loginFormPlaceholders);
-        $head->addMenuItem(false, "<b>Not a user yet? Register here", "index.php?content=register");
+        $head->addMenuItem(false, "<b>Not a user yet? Register here</b>", "index.php?content=register");
     }
 
     $head->display();

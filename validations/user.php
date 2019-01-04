@@ -49,14 +49,11 @@
             catch (InvalidArgumentException $e) {
                 $this->error .= "Your email is invalid.";
             }
-            //only check password when delivered
-            if (isset($array['password']) && isset($array['password2'])) {
-                try {
-                    $this->password = new Password($array['password'], $array['password2']);
-                }
-                catch (InvalidArgumentException $e) {
-                    $this->error .= "Your password is invalid.";
-                }
+            try {
+                $this->password = new Password($array['password'], $array['password2']);
+            }
+            catch (InvalidArgumentException $e) {
+                $this->error .= "Your password is invalid.";
             }
         }
 
