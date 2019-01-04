@@ -1,30 +1,17 @@
 <?php
 
-$basePath = $error = $message = $isLeader = "";
-$pageTitle = "Marketplace";
-$orderBy = isset($_GET['orderBy']) ? $_GET['orderBy'] : "";
-
 ini_set("display_errors", 1);
-
-require_once("validations/squad.php");
-require_once("validations/inventory.php");
-require_once("includes/database.php");
-require_once("validations/itemType.php");
-require_once("validations/name.php");
-require_once("includes/squadStatus.php");
 
 session_start();
 session_regenerate_id();
+
+$basePath = $error = $message = $isLeader = "";
+$orderBy = isset($_GET['orderBy']) ? $_GET['orderBy'] : "";
 
 //no user linked to the session? just return ...
 if (!isset($_SESSION['user'])) {
     header("location:index.php");
 }
-
-include("includes/head.php");
-
-$db = new Database();
-$connection = $db->connect();
 
 //check the squads status
 $status = getSquadStatus($connection);
@@ -92,8 +79,6 @@ else {
 }        
 
 
-include("includes/foot.php");
-
 //helper functions
 //TODO: Code seems more complex than necessary
 function listMarket($inventory, $market, $squad, $orderBy) {
@@ -105,9 +90,9 @@ function listMarket($inventory, $market, $squad, $orderBy) {
         <th scope='col'>You have</th>
         <th scope='col'></th>
         <th scope='col'>Image</th>
-        <th scope='col'><a href='marketplace.php?orderBy=byName'>Name</a></th>
-        <th scope='col'><a href='marketplace.php?orderBy=byPrice'>Price</a></th>
-        <th scope='col'><a href='marketplace.php?orderBy=byClass'>Class</a></th>
+        <th scope='col'><a href='index.php?content=marketplace&orderBy=byName'>Name</a></th>
+        <th scope='col'><a href='index.php?content=marketplace&orderBy=byPrice'>Price</a></th>
+        <th scope='col'><a href='index.php?content=marketplace&orderBy=byClass'>Class</a></th>
         <th></th>
     </tr>
     </thead>");
@@ -136,7 +121,7 @@ function listMarket($inventory, $market, $squad, $orderBy) {
                     +<span class='text-warning'>".$count2."<span/></td>
                 <td style='vertical-align:middle;'>
                     <div id='".$item->name()."'>
-                    <form class='form-group' name='buy' action='marketplace.php?orderBy=".$orderBy."#".$item->name()."' method='POST' id='activate".$item->name()."'>
+                    <form class='form-group' name='buy' action='index.php?orderBy=".$orderBy."#".$item->name()."' method='POST' id='activate".$item->name()."'>
                         <input type='hidden' name='name' value='".$item->name()."'>
                         <input type='hidden' name='price' value='".$item->price()."'>
                         <input type='hidden' name='buyItem' value='true'>
@@ -144,7 +129,7 @@ function listMarket($inventory, $market, $squad, $orderBy) {
                             <span>".$buyButton."</span> 
                         </button>
                     </form>
-                    <form class='form-group' name='sell' action='marketplace.php?orderBy=".$orderBy."#".$item->name()."' method='POST' id='activate".$item->name()."'>
+                    <form class='form-group' name='sell' action='index.php?orderBy=".$orderBy."#".$item->name()."' method='POST' id='activate".$item->name()."'>
                     <input type='hidden' name='name' value='".$item->name()."'>
                     <input type='hidden' name='price' value='".$item->price()."'>
                     <input type='hidden' name='sellItem' value='true'>
@@ -162,32 +147,6 @@ function listMarket($inventory, $market, $squad, $orderBy) {
                 <td style='vertical-align:middle;'>".$item->class()."</td>
         ");
     }
-}
-
-function listInventory($market, $inventory, $squad) {
-    $inventoryItems = $inventory->items();
-    print_r($inventoryItems);
-    echo("<table class='table'>
-    <thead>
-    <tr>
-        <th scope='col'></th>
-        <th scope='col'>Image</th>
-        <th scope='col'><a href='marketplace.php?orderBy=byName'>Name</a></th>
-        <th scope='col'><a href='marketplace.php?orderBy=byPrice'>Price</a></th>
-        <th scope='col'><a href='marketplace.php?orderBy=byClass'>Class</a></th>
-        <th></th>
-    </tr>
-    </thead>");
-        //problem: we save each item in the database -> how to get the number?
-        foreach($market as $item) {
-            echo($item->name());
-           
-            echo("<tr>
-                    <td style='vertical-align:middle;'>".$item->name()."</td>
-                    <td style='vertical-align:middle;'>".$count."</td>
-            ");
-        }
-    echo("</table>");
 }
 
 ?>

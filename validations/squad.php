@@ -61,46 +61,40 @@
            if (!isset($array['name']) || !isset($array['leadername']) || !isset($array['players'])) {
                 throw new InvalidArgumentException("Fill out all required form elements");
             }
-            try {
-                //class Name will validate these fields:
-                $this->name = new Name($array['name']);
-                $this->leader = new Name($array['leadername']);
+            //class Name will validate these fields:
+            $this->name = new Name($array['name']);
+            $this->leader = new Name($array['leadername']);
 
-                //TODO: Error prone. What if a player has a ',' in his name ?? We need to check player names !
-                $playersRaw = explode(",", $array['players']);
-                
-                //make sure a player was not registered twice or more. We give no error if this happend.
-                //TODO: DOES NOT WORK PROPERLY
-                for($i = 0; $i < count($playersRaw); $i++) {
-                    trim($playersRaw[$i]);
-                }
-                $players = array_unique($playersRaw);
-
-                if (count($players) < 2) {
-                    throw new InvalidArgumentException("You need a leader and at least two players to form a squad. You only gave us ".count($players)." Players.");
-                }
-                foreach($players as $player) {
-                    $this->players[] = new Name($player);
-                }
-
-                //check for voluntary fields:
-                if (isset($array['url'])) {
-                    if (filter_var(htmlspecialchars(trim($array['url']), FILTER_VALIDATE_URL))) {
-                        $this->url = htmlspecialchars(trim($array['url']));
-                    }
-                    else $this->error .= "Your clan url seems invalid.";
-                }
-                //TODO: Clan image
-                
-                //The following variables can not be set by a normal user, we skip validations here:
-                $this->side = isset($array['side']) ? $array['side'] : null;
-                $this->credits = isset($array['credits']) ? $array['credits'] : "0";
-                $this->status = isset($array['status']) ? $array['status'] : "pending";
+            //TODO: Error prone. What if a player has a ',' in his name ?? We need to check player names !
+            $playersRaw = explode(",", $array['players']);
+            
+            //make sure a player was not registered twice or more. We give no error if this happend.
+            //TODO: DOES NOT WORK PROPERLY
+            for($i = 0; $i < count($playersRaw); $i++) {
+                trim($playersRaw[$i]);
             }
-            //TODO: Remove
-            catch (InvalidArgumentException $e) {
-                throw $e;
+            $players = array_unique($playersRaw);
+
+            if (count($players) < 2) {
+                throw new InvalidArgumentException("You need a leader and at least two players to form a squad. You only gave us ".count($players)." Players.");
             }
+            foreach($players as $player) {
+                $this->players[] = new Name($player);
+            }
+
+            //check for voluntary fields:
+            if (isset($array['url'])) {
+                if (filter_var(htmlspecialchars(trim($array['url']), FILTER_VALIDATE_URL))) {
+                    $this->url = htmlspecialchars(trim($array['url']));
+                }
+                else $this->error .= "Your clan url seems invalid.";
+            }
+            //TODO: Clan image
+            
+            //The following variables can not be set by a normal user, we skip validations here:
+            $this->side = isset($array['side']) ? $array['side'] : null;
+            $this->credits = isset($array['credits']) ? $array['credits'] : "0";
+            $this->status = isset($array['status']) ? $array['status'] : "pending";
         }
 
         //getters:
@@ -145,7 +139,7 @@
         public static function load(PDO $connection, String $username) {
             //first, check if the given player has a squad id
             //$query = "SELECT squadID FROM Player WHERE username = :username";
-            $query = "SELECT squadID, Squad.sideID FROM Player 
+            $query = "SELECT Player.username, squadID, Squad.sideID FROM Player 
                         LEFT OUTER JOIN Squad ON Player.squadID = Squad.id
                         WHERE Player.username = :username";
             
@@ -285,13 +279,14 @@
         */
         public function save(PDO $connection) {
             //ERROR CHECK: Is one of the players already in a squad ?
-            $squadIDs = $this->isInForeignSquad($connection, $this->players);
+            $allPlayers = $this->players;
+            $allPlayers[] = $this->leader;
+            $squadIDs = $this->isInForeignSquad($connection, $allPlayers);
             foreach($squadIDs as $id) {
                 if (!is_null($id)) {
                     throw new InvalidArgumentException("One of your player already is in a squad");
                 }
             }   
-            //TODO: Include squad-leader in above test
 
             //ERROR-CHECK: Does a squad with this name already exists?
             $query = "SELECT name FROM Squad WHERE name = :name";
@@ -460,7 +455,7 @@
 
         //check if a player already is in a squad
         private function isInForeignSquad(PDO $connection, $names) {
-            $query = "SELECT squadID FROM Player WHERE name = :name";
+            $query = "SELECT squadID FROM Player WHERE username = :name";
             $stm = $connection->prepare($query);
             $result = array();
             foreach($names as $name) {
@@ -469,6 +464,7 @@
                 $temp = $stm->fetch(PDO::FETCH_ASSOC);
                 $result[] = $temp['squadID'];
             }
+            print_r($result);
             return $result;
         }
 

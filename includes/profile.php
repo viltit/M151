@@ -15,22 +15,13 @@
         header("location:index.php");
     }
 
-    $pageTitle = "My Profile";
     $errors = $message = "";
 
     ini_set("display_errors", 1);
-    include("includes/head.php");
-    include_once("validations/user.php");
-    include_once("includes/database.php");
 
-    if (!isset($connection)) {
-        $db = new Database();
-        $connection = $db->connect();
-    }
     //load user data from database
     if (!isset($user)) {
         try {
-            print_r($_SESSION['user']);
             $user = User::load($connection, $_SESSION['user']);
         }
         catch (InvalidArgumentException $e) {
@@ -83,7 +74,7 @@
 -->
 <h1>My profile</h1>
 <br>
-<form action="" method="POST">
+<form action="index.php" method="POST">
     <!-- Name -->
     <div class="form-group">
         <label for="name">Name *</label>
