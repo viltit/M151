@@ -2,12 +2,7 @@
 
     session_start();
 
-    $pageTitle = "Register yourself";
-
     ini_set("display_errors", 1);
-    include("includes/head.php");
-    include_once("validations/user.php");
-    include_once("includes/database.php");
 
     $message = $errors = $user = $name = $firstName = $email = $username = "";
 
@@ -53,7 +48,7 @@
 ?>
     
 
-<form action="" method="POST">
+<form action="index.php" method="POST">
     <!-- Name -->
     <div class="form-group">
         <label for="name">Name *</label>
@@ -95,7 +90,7 @@
     </div>
 
     <!-- Submit or reset -->
-    <button type="submit" name="button" value="submit" class="btn btn-info">Submit</button>
+    <button type="submit" name="register" value="submit" class="btn btn-info">Submit</button>
     <button type="reset" name="button" value="reset" class="btn btn-warning">Reset</button>
 </form>
 
