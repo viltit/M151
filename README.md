@@ -8,7 +8,7 @@
   
   Der Container kann einen beliebigen Namen haben. Auch das root-Passwort spielt keine Rolle.
   
-- auf dem mySQL-Server muss ein Benutzer 'webuser2' mit dem Passwort '151@web' exisieren. Alternativ kann ein anderer User mit anderem Passwort eingerichtet werden, dann muss die Datei "includes/database.php" angepasst werden.
+- auf dem mySQL-Server muss ein Benutzer 'webuser' exisieren. Das Passwort findet sich in "includes/database.php". Alternativ kann ein anderer User mit anderem Passwort eingerichtet werden, dann muss die Datei "includes/database.php" angepasst werden.
 
 - die Datenbank kann mit dem Script a3.sql erstellt werden. Dieses beinhaltet neben der Grundstruktur auch schon einige User, einen Admin und Inventar.
 
@@ -37,4 +37,4 @@
 
 Workaround:
 
-  `CREATE USER webuser2 identified with mysql_native_password by '151@web';`
+  `CREATE USER webuser identified with mysql_native_password by <password>;`
